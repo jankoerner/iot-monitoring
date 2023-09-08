@@ -1,0 +1,32 @@
+\documentclass[12pt]{article}
+
+%Load preamble
+%-------------------------------------------------------
+\input{preamble.tex}
+%-------------------------------------------------------
+
+
+\newcommand{\group}{Group 1}
+\newcommand{\course}{DAT300 / DIT616}
+\newcommand{\memberOne}{Samuel Bach}
+\newcommand{\memberTwo}{Albin Karlsson}
+\newcommand{\memberThree}{Jan Körner}
+\newcommand{\memberFour}{Linus Sundkvist}
+
+\author{\memberOne{,}\memberTwo{,} \memberThree{,} \memberFour{,}}
+\title{This is a nice title}
+\newcommand{\subtitle}{This is a nice subtitle}
+
+\fancyhead[R]{\group{} - \course}
+\fancyhead[L]{
+\begin{tabular}{@{}ll@{}}
+\memberOne & \memberTwo \\
+\memberThree & \memberFour \\
+\end{tabular}}
+
+\begin{document}
+\section*{\thetitle}
+\subsection*{\subtitle}
+\end{document}
+
+

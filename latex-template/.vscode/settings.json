@@ -1,0 +1,23 @@
+{
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "LuaTex",
+            "tools": [
+                "lualatex"
+            ]
+        }
+    ],
+    "latex-workshop.latex.tools": [
+        {
+            "name": "lualatex",
+            "command": "lualatex",
+            "args": [
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "%DOC%"
+            ]
+        }
+    ],
+    "editor.wordWrap": "on",
+}

@@ -1,0 +1,38 @@
+%Geometry
+\usepackage[a4paper,width=160mm,top=25mm,bottom=25mm]{geometry}
+\setlength{\headheight}{30pt}
+%Language
+\usepackage[english]{babel}
+%Sources
+\usepackage[backend=biber, citestyle=apa, bibstyle=apa]{biblatex}
+\addbibresource{bib/bibliography.bib}
+%Colors
+\usepackage[dvipsnames]{xcolor}
+%Advanced quotes 
+\usepackage[]{csquotes}
+%Positioning of images and tables
+\usepackage{float}
+%OpenType fonts can be loaded
+\usepackage{fontspec}
+%Images
+\usepackage{graphicx}  
+\graphicspath{{/images/}}
+%Notes
+\usepackage[colorinlistoftodos,prependcaption]{todonotes}
+\setlength {\marginparwidth }{2cm} % Wird gebraucht um Fehlermeldung wegzubekommen
+\newcommand{\info}[2][1=]{\todo[linecolor=green,backgroundcolor=green!25,bordercolor=green,#1]{#2}}
+%Removes indentation
+\setlength{\parindent}{0pt}
+%Better tables
+\usepackage{xltabular}
+%More list options
+\usepackage{paralist}
+%References
+\usepackage[hidelinks,breaklinks=true]{hyperref}
+\usepackage[noabbrev,nameinlink]{cleveref}   %cleveref muss nach hyperref geladen werden
+%Title, author etc
+\usepackage[]{titling}
+%Header / Footer
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
