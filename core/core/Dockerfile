@@ -15,5 +15,5 @@ COPY . .
 EXPOSE 12000:12000
 EXPOSE 12001:12001
 
-ENTRYPOINT ["tail", "-f", "/dev/null"]
-#ENTRYPOINT ["/usr/local/bin/python", "/core/main.py"]
+#ENTRYPOINT ["tail", "-f", "/dev/null"]
+ENTRYPOINT ["/usr/local/bin/python", "/core/main.py"]

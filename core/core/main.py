@@ -1,8 +1,8 @@
-# echo-server.py
+#!/usr/bin/python
 
 import socket
 
-HOST = "localhost"  # Standard loopback interface address (localhost)
+HOST = "0.0.0.0"  # Standard loopback interface address (localhost)
 PORT = 12000  # Port to listen on (non-privileged ports are > 1023)
 
 print(f"Starting server on: {HOST}:{PORT}")
@@ -16,3 +16,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         print(f"Connected by {addr}")
         # get data untill newline and print
         data = conn.recv(1024)
+        print(data.decode("utf-8"))
