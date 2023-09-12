@@ -18,7 +18,7 @@ services:
         ports:
             - 5432:5432
         volumes:
-            - ./postgres:/var/lib/postgresql/data
+            - postgres:/var/lib/postgresql/data
         environment:
             POSTGRES_DB: core_db
             POSTGRES_USER: user
@@ -43,3 +43,7 @@ services:
 networks:
   corenetwork:
     external: true
+
+volumes:
+  postgres:
+    external: false
