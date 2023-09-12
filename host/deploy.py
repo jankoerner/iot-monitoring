@@ -20,7 +20,7 @@ def startup(connections):
         pw = connection[1][1]
         
         client = create_ssh(ip,user,pw)      
-        #client.exec_command("chmod +x " + iot_folder + "startup.sh && " + iot_folder + "startup.sh")
+        client.exec_command(f"cd {iot_folder}/; (nohup ./startup.sh &); cd ~")
         client.close()
 
 def copy_folder(src, dest, connections):
