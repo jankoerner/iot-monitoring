@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+    core:
+        container_name: core
+        build: core
+        volumes:
+            - ./core:/core
+        networks:
+            - default
+            - corenetwork
+        ports:
+            - 12000:12000/tcp
+            - 12001:12001/tcp
+    postgres:
+        container_name: postgres
+        image: postgres
+        ports:
+            - 5432:5432
+        volumes:
+            - ./postgres:/var/lib/postgresql/data
+        environment:
+            POSTGRES_DB: core_db
+            POSTGRES_USER: user
+            POSTGRES_PASSWORD: password
+        networks:
+            - corenetwork
+    grafana:
+        container_name: grafana
+        image: grafana/grafana:latest
+        restart: unless-stopped
+        user: "0:0"
+        depends_on:
+            - postgres
+        ports:
+            - 3000:3000
+        volumes:
+            - ./grafana:/var/lib/grafana
+        networks:
+            - corenetwork
+            - default
+
+networks:
+  corenetwork:
+    external: true
