@@ -26,14 +26,14 @@ def install_monitoring(src, connections):
         ip,user,pw = extract_conn_infos(connection)
         client = create_ssh(ip,user,pw)
         
-        stdin, stdout, stderr = client.exec_command(f"cd {iot_folder}/monitoring; (sudo -S apt-get -y install ./*)")
-        stdin.write("solo + \n")
+        stdin, _, _ = client.exec_command(f"cd {iot_folder}/monitoring; (sudo -S apt-get -y install ./*)")
+        stdin.write(pw + "\n")
         stdin.flush()
-        
-        stdin, stdout, stderr = client.exec_command("sudo /usr/share/rpimonitor/scripts/updatePackagesStatus.pl")
-        stdin.write("solo + \n")
-        stdin.flush()        
-        
+
+        stdin, _, _ = client.exec_command("sudo -S /usr/share/rpimonitor/scripts/updatePackagesStatus.pl")
+        stdin.write(pw + "\n")
+        stdin.flush()
+
         client.close()
 
             
