@@ -30,6 +30,23 @@ def install_monitoring(src, connections):
 
         client.close()
 
+def copy_data(src, dest, connections):
+    device_no = 1
+    for connection in connections.items():
+        ip,user,pw = extract_conn_infos(connection)
+        
+        client = create_ssh(ip,user,pw)
+        client.exec_command('mkdir -p ' + dest)
+        
+        scp = SCPClient(client.get_transport())
+        scp.put(f"{src}/part_{device_no}.csv",remote_path=dest)
+        
+        device_no += 1
+        
+        scp.close()
+        client.close()
+        
+
             
 def main():
     parser = argparse.ArgumentParser(description="Script to deploy data and binaries to the pi's")
@@ -43,10 +60,10 @@ def main():
     connections = read_connection_file(args.connections)
     
     if args.data:
-        copy_folder(args.data, iot_folder + "data", connections)
+        copy_data(args.data, iot_folder + "/data", connections)
         
     if args.binaries:
-        copy_folder(args.binaries, iot_folder + "binaries", connections)
+        copy_folder(args.binaries, iot_folder + "/binaries", connections)
     
     if args.monitoring:
         install_monitoring(args.monitoring, connections)
