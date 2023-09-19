@@ -28,7 +28,7 @@ docker-compose up
 | 12002/tcp | Adminer       |
 
 ## Core
-Recieves Utf-8 encoded floats separated by `"/n"`
+Recieves Utf-8 encoded floats separated by `/n`
 
 ## Grafana
 * Username: admin
