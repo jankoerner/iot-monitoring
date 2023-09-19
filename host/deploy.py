@@ -1,10 +1,8 @@
 import argparse
 import paramiko
 from scp import SCPClient
-
 from utils import *
 
-iot_folder = '~/iot-monitoring/'
 
 def copy_folder(src, dest, connections):
     for connection in connections.items():
@@ -27,10 +25,6 @@ def install_monitoring(src, connections):
         client = create_ssh(ip,user,pw)
         
         stdin, _, _ = client.exec_command(f"cd {iot_folder}/monitoring; (sudo -S apt-get -y install ./*)")
-        stdin.write(pw + "\n")
-        stdin.flush()
-
-        stdin, _, _ = client.exec_command("sudo -S /usr/share/rpimonitor/scripts/updatePackagesStatus.pl")
         stdin.write(pw + "\n")
         stdin.flush()
 

@@ -1,7 +1,7 @@
 import csv
 import paramiko
 
-iot_folder = '~/iot-monitoring/'
+iot_folder = '~/iot-monitoring'
 
 def create_ssh(ip, user, pw):
     ssh_client = paramiko.SSHClient()
