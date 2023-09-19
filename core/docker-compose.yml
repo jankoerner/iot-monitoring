@@ -11,7 +11,6 @@ services:
             - corenetwork
         ports:
             - 12000:12000/tcp
-            - 12001:12001/tcp
     mysql:
         container_name: mysql
         image: mysql
