@@ -8,9 +8,12 @@ RUN apt-get update && apt-get install -y \
     nano \
     curl
 
+
 WORKDIR /core
 
 COPY . .
+
+RUN pip install -r requirements.txt
 
 EXPOSE 12000:12000
 EXPOSE 12001:12001

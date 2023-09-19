@@ -12,17 +12,16 @@ services:
         ports:
             - 12000:12000/tcp
             - 12001:12001/tcp
-    postgres:
-        container_name: postgres
-        image: postgres
-        ports:
-            - 5432:5432
+    mysql:
+        container_name: mysql
+        image: mysql
         volumes:
-            - postgres:/var/lib/postgresql/data
+            - mysql-data:/var/lib/mysql
         environment:
-            POSTGRES_DB: core_db
-            POSTGRES_USER: user
-            POSTGRES_PASSWORD: password
+            MYSQL_DATABASE: core_db
+            MYSQL_USER: user
+            MYSQL_PASSWORD: password
+            MYSQL_ROOT_PASSWORD: password
         networks:
             - corenetwork
     grafana:
@@ -31,11 +30,21 @@ services:
         restart: unless-stopped
         user: "0:0"
         depends_on:
-            - postgres
+            - mysql
         ports:
             - 3000:3000
         volumes:
             - ./grafana:/var/lib/grafana
+        networks:
+            - corenetwork
+            - default
+    adminer:
+        image: adminer
+        ports:
+            - 12002:8080
+        environment:
+            - ADMINER_DEFAULT_SERVER=mysql
+            - ADMINER_DEFAULT_DB_NAME=core_db
         networks:
             - corenetwork
             - default
@@ -45,5 +54,5 @@ networks:
     external: true
 
 volumes:
-  postgres:
+  mysql-data:
     external: false
