@@ -128,7 +128,8 @@ def Main():
             `id` int NOT NULL AUTO_INCREMENT,
             `timestamp` DATETIME(6) NOT NULL,
             `value` double NOT NULL,
-            PRIMARY KEY (`id`)
+            PRIMARY KEY (`id`, `timestamp`),
+            UNIQUE KEY `timestamp` (`timestamp`)
         );''' % table_lookup[alg]))
 
     conn.commit()
