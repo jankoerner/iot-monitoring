@@ -3,7 +3,7 @@ import os
 
 # Define the input CSV file and the directory to store the split files
 input_csv_file = '../data/datasets/Ericsson/cpu.csv'
-output_directory = 'split_files'
+output_directory = 'datasets/cpu-splitted'
 
 if not os.path.exists(output_directory):
     os.makedirs(output_directory)
@@ -25,7 +25,9 @@ def split_csv_into_parts(input_csv_file, output_directory, num_parts=40):
         output_file = os.path.join(output_directory, f'part_{i + 1}.csv')
         with open(output_file, 'w', newline='') as output_csvfile:
             csvwriter = csv.writer(output_csvfile)
-            csvwriter.writerow([item for sublist in chunk_data for item in sublist])
+            for row in chunk_data:
+                for item in row:
+                    csvwriter.writerow([item])  # Write each item in a separate row
 
 if __name__ == "__main__":
     split_csv_into_parts(input_csv_file, output_directory)
