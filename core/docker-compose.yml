@@ -4,6 +4,9 @@ services:
     core:
         container_name: core
         build: core
+        depends_on:
+            mysql:
+                condition: service_healthy
         volumes:
             - ./core:/core
         networks:
@@ -23,13 +26,15 @@ services:
             MYSQL_ROOT_PASSWORD: password
         networks:
             - corenetwork
+        healthcheck:
+            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            timeout: 2s
+            retries: 20
     grafana:
         container_name: grafana
         image: grafana/grafana:latest
         restart: unless-stopped
         user: "0:0"
-        depends_on:
-            - mysql
         ports:
             - 3000:3000
         volumes:
