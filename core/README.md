@@ -38,7 +38,7 @@ Recieves Utf-8 encoded data, multiple samples can be separated by newline
 | TIMESTAMP | 1695215098.123456  |
 | VALUE     | 13.37              |
 
-Ex: `1,1695215098.123456,13,37/n`
+Ex: `1,1695215098.123456,13.37/n`
 
 ## Grafana
 * Username: admin
