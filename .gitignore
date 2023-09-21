@@ -1,6 +1,7 @@
 .vscode
 venv/
 __pycache__
+build
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
