@@ -10,6 +10,8 @@
 
 #include "main.h"
 
+#define CONNECT_SERVER 0
+
 // Server
 #define PORT 12000
 
@@ -21,6 +23,7 @@ int main(int argc, char** argv) {
   if(argc > 1)
     parseArgs(argc, argv, args);
 
+#if CONNECT_SERVER
   int sockfd;
   const struct sockaddr_in servaddr = {
     .sin_family= AF_INET,
@@ -45,6 +48,7 @@ int main(int argc, char** argv) {
   }
   else
   printf("connected to the server..\n");
+#endif
 
 
 
@@ -77,7 +81,9 @@ int main(int argc, char** argv) {
     free(line);
 
   fclose(fp);
+#if CONNECT_SERVER
   close(sockfd);
+#endif
   free(args);
   exit(0);
 }
@@ -102,6 +108,6 @@ int parseArgs(int argc, char** argv, struct args* args){
       return -1;
     }
   }
-  
+
   return 0;
 }
