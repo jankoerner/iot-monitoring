@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c99 -Wall -pedantic -Wincompatible-pointer-types -Wno-deprecated-declarations -g
+CFLAGS = -Wall -pedantic -Wincompatible-pointer-types -Wno-deprecated-declarations -g
 
 all: 
 	mkdir -p build
