@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -15,7 +16,7 @@
 int main(int argc, char** argv) {
   struct args* args = malloc(sizeof(struct args));
   args->address = "127.0.0.1";
-  args->poll_rate = 1000;
+  args->poll_rate = 1;
 
   if(argc > 1)
     parseArgs(argc, argv, args);
@@ -45,8 +46,38 @@ int main(int argc, char** argv) {
   else
   printf("connected to the server..\n");
 
+
+
+  FILE* fp;
+  char* line = NULL;
+  size_t len = 0;
+  ssize_t read;
+  struct timespec start, end;
+
+  fp = fopen(args->filename, "r");
+  if (fp == NULL)
+    return -1;
+
+  clock_gettime(CLOCK_REALTIME, &start);
+  read = getline(&line, &len, fp);
+  while (read != -1) {
+    clock_gettime(CLOCK_REALTIME, &end);
+    if((end.tv_sec - start.tv_sec) > (args->poll_rate)){
+
+      printf("%s", line); // Algo goes here
+
+      read = getline(&line, &len, fp);
+      clock_gettime(CLOCK_REALTIME, &start);
+    }
+    else
+      sleep(0.1);
+  }
+
+  if(line)
+    free(line);
+
+  fclose(fp);
   close(sockfd);
-  printf("Hello World, %s %s %d\n", args->filename, args->address, args->poll_rate);
   free(args);
   exit(0);
 }
