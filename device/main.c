@@ -19,6 +19,7 @@ int main(int argc, char** argv) {
   struct args* args = malloc(sizeof(struct args));
   args->address = "127.0.0.1";
   args->poll_rate = 1;
+  args->algorithm = 0;
 
   if(argc > 1)
     parseArgs(argc, argv, args);
@@ -56,22 +57,22 @@ int main(int argc, char** argv) {
   char* line = NULL;
   size_t len = 0;
   ssize_t read;
-  struct timespec start, end;
+  struct timespec* start = malloc(sizeof(struct timespec));
+  struct timespec* end = malloc(sizeof(struct timespec));
 
   fp = fopen(args->filename, "r");
   if (fp == NULL)
     return -1;
 
-  clock_gettime(CLOCK_REALTIME, &start);
   read = getline(&line, &len, fp);
   while (read != -1) {
-    clock_gettime(CLOCK_REALTIME, &end);
-    if((end.tv_sec - start.tv_sec) > (args->poll_rate)){
+    clock_gettime(CLOCK_REALTIME, end);
+    if(start == NULL || (end->tv_sec - start->tv_sec) > args->poll_rate){
 
       printf("%s", line); // Algo goes here
 
       read = getline(&line, &len, fp);
-      clock_gettime(CLOCK_REALTIME, &start);
+      clock_gettime(CLOCK_REALTIME, start);
     }
     else
       sleep(0.1);
