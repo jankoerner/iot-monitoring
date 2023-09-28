@@ -42,7 +42,7 @@ def copy_data(src, dest, connections):
         scp.put(f"{src}/part_{device_no}.csv",remote_path=dest)
         
         client.exec_command(f'mv {dest}/part_{device_no}.csv {dest}/data.csv')
-                
+        client.exec_command(f'cd {dest}; echo "{device_no}" >> id.txt')
         device_no += 1
         scp.close()
         client.close()

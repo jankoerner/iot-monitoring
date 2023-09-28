@@ -3,12 +3,16 @@
 
 #include <string>
 #include <cstdint>
+#include <optional>
 
 enum AlgorithmId {
     BASELINE = 1
 };
 
 std::string createMsg(const AlgorithmId algoId, const float value);
+std::string createMsg(const std::int64_t deviceId, const AlgorithmId algoId, const float value);
+
+std::optional<std::int64_t> getDeviceId(const std::string& deviceIdFilepath);
 
 class Client {
     public: 

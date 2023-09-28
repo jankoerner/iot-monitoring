@@ -1,8 +1,12 @@
 #include <arpa/inet.h>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <unistd.h>
+
 
 #include "utils.hpp"
 
@@ -14,6 +18,28 @@ std::string createMsg(const AlgorithmId algoId, const float value){
 
     return msg;
 }
+
+std::string createMsg(const std::int64_t deviceId, const AlgorithmId algoId, const float value){
+    return std::to_string(deviceId) + "," + createMsg(algoId,value);
+}
+
+std::optional<std::int64_t> getDeviceId(const std::string& deviceIdFilepath){
+    if (! std::filesystem::exists(deviceIdFilepath))
+    {
+        return std::nullopt;
+    }
+
+    auto fileStream = std::ifstream{deviceIdFilepath};
+    
+    std::string line;
+    std::getline(fileStream,line);
+
+    fileStream.close();
+    std::cout << line.size() << "\n";  
+
+    return std::stoi(line);
+}
+
 
 Client::Client(const std::string& ip, const std::int64_t port) : Ip{ip}, Port{port} {
     socket_fd = socket(AF_INET,SOCK_STREAM,0); 
