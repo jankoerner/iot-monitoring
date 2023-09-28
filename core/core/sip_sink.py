@@ -1,45 +1,37 @@
+#!/usr/bin/python
+
+import socket
 from _thread import *
 import threading
 import time
+import datetime
 
+NUM_DEVICES = 1
+FREQUENCY = 10 # Hz
+
+HOST = "0.0.0.0"  # Standard loopback interface address (localhost)
+PORT = 12001  # Port to listen on
+
+frq = 1/FREQUENCY
 class SIP:
     def __init__(self, k, m):
         self.k = k
         self.m = m
         self.lastSampledTime = 0
     
-    def getPrediction(time):
+    def getPrediction(self, t):
         self.lastSampledTime = float(f"{time.time():.6f}")
-        return self.k * time + self.m
+        return self.k * t + self.m
     
-    def getFunction(time):
+    def getFunction(self):
         return [self.k, self.m]
-
-p1 = SIP(1,2)
-
-
-# Setup socket
-
-def init(HOST, PORT):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((HOST, PORT))
-
-    print(f"Started server on: {HOST}:{PORT}")
-
-    # Listen for incoming connections
-    s.listen(1)  # Listen for a single incoming connection
-
-    c, addr = s.accept()
     
-    start_new_thread(threaded, (c,))
-
-    
-    return sink
-
-# Start service
+    def setFunction(self, k, m):
+        self.k = k
+        self.m = m
 
 # Spawn thread that samples the sink
-def threaded(c):
+def socket_thread(c):
     while True:
         try: 
             raw = c.recv(1024)
@@ -73,16 +65,16 @@ def threaded(c):
                 print("Invalid data format, continue")
                 continue
  
-            #(INT, TIME, FLOAT)
+            #(INT, TIME, FLOAT, FLOAT)
 
-            # Check types
-            type_s  = args[0]
+            # Check devices
+            device_s  = args[0]
             time_s  = args[1]
             k_s = args[2]
-            m_s = args[2]
+            m_s = args[3]
 
-            if (not type_s.isdigit()):
-                print("Invalid type format, continue")
+            if (not device_s.isdigit()):
+                print("Invalid device format, continue")
                 continue
             
             # check if arg1 is a unix time with at most five decumals
@@ -97,27 +89,70 @@ def threaded(c):
                     continue
 
             # check if arg2 is a float
-            if (not k_s.replace('.', '', 1).isdigit()): 
+            if (not k_s.replace('.', '', 1).lstrip('-').isdigit() or k_s.count('-') > 1 or k_s.count('.') > 1 ):
                 print("Invalid data format, continue")
                 
             # check if arg3 is a float
-            if (not m_s.replace('.', '', 1).isdigit()): 
+            if (not m_s.replace('.', '', 1).lstrip('-').isdigit() or m_s.count('-') > 1 or m_s.count('.') > 1 ): 
                 print("Invalid data format, continue")
                 continue
 
-            # check if arg0 is a valid type
+            # check if arg0 is a valid device
             try:
-                table = table_lookup[int(type_s)]
+                sink = sinks[int(device_s)]
             except:
-                print("Invalid not a type, continue")
+                print("Invalid not a device, continue")
                 continue
 
             #unixtime = "{:.6f}".format(float(time_s))
             timestamp = datetime.datetime.fromtimestamp(unixtime).strftime('%Y-%m-%d %H:%M:%S.%f')
             k = float(k_s)
             m = float(m_s)
-         
-            return [k, m]
-            
+
+            # Lock device
+
+            # Critical section
+            sink.setFunction(k, m)
+
+            # Release lock device  
     # connection closed
     c.close()
+
+def sample_thread():
+    time_start = time.time()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((HOST, 12000))
+
+    while True:
+        i = 0;
+        for sink in sinks:
+            i = i + 1
+            # Lock device
+
+            # Critical section
+            time_since_start = time.time() - time_start
+            prediction = sink.getPrediction(time_since_start)
+            # Release lock device
+            print(f"Sampled: {prediction} from {sink} @ {time_since_start}")
+            s.sendall(b'f"{i},{time_since_start},{prediction}"\n')
+
+        time.sleep(frq)
+
+sinks = [None] * NUM_DEVICES
+
+for i in range(NUM_DEVICES):
+    sinks[i] = SIP(0,0)
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+
+print(f"Started server on: {HOST}:{PORT}")
+
+# Listen for incoming connections
+s.listen(NUM_DEVICES)  # Listen for a single incoming connection
+
+start_new_thread(sample_thread, ())
+
+while True:
+    c, addr = s.accept()
+    start_new_thread(socket_thread, (c,))

@@ -2,8 +2,6 @@
 
 import socket
 
-import sip_sink as sip
-
 HOST = "0.0.0.0"  # Standard loopback interface address (localhost)
 PORT = 12000  # Port to listen on (non-privileged ports are > 1023)
 
