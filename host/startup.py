@@ -22,7 +22,7 @@ def start_monitoring(connections, interval, total_ticks):
         client = create_ssh(ip,user,pw)      
         client.exec_command(f"mkdir -p {iot_folder}/monitoring/results")
         
-        cmd = f"cd {iot_folder}/monitoring/results;(sar -u -n DEV -r -d -o {filename} {interval} {total_ticks} > /dev/null 2>&1 &)"        
+        cmd = f"cd {iot_folder}/monitoring/results;(sar -u -n DEV -r -d -F -o {filename} {interval} {total_ticks} > /dev/null 2>&1 &)"        
         client.exec_command(cmd)
         client.close()
     
