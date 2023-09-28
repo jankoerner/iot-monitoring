@@ -1,4 +1,4 @@
-from _thread import *
+ from _thread import *
 import threading
 import time
 
