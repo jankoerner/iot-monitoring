@@ -4,6 +4,14 @@ An application running on a core server is responsible for receiving data and di
 
 # Setup and Usage
 
+### SERVICE.env:
+| ENV VARIABLE | Details                   |
+| ------------ |-------------------------- |
+| CORE_PORT    | Core service port         |
+| SINK_PORT    | Sink service port         |
+| NUM_DEVICES  | Number of devices in test |
+| SAMPLE_FREQ  | Sink sample frequency     |
+
 Create the network
 ```console
 docker network create corenetwork
@@ -11,13 +19,32 @@ docker network create corenetwork
 
 Build the images
 ```console
-docker-compose build
+./docker.sh SERVICE build
 ```
 
 Start the server
 ```console
-docker-compose up
+./docker.sh SERVICE up
 ```
+
+Stop everything
+```console
+./docker.sh ALL down
+```
+
+List of services:
+| SERVICE | Info                             |
+| ------- |----------------------------------|
+| ALL     | All defined services             |
+| BASE    | Bare essentials for baseline     |
+| SIP     | The Spanish Inquisition Protocol |
+| ASR     | TODO                             |
+
+Ex. Build and Start core with the Spanish Inquisition Protocol detatched
+```console
+./docker.sh SIP up -d --build
+```
+
 
 ## Exposes
 
@@ -32,13 +59,13 @@ Recieves Utf-8 encoded data, multiple samples can be separated by newline
 
 `ALG,TIMESTAMP,VALUE/n`
 
-| Type      | Format             |
-| --------- | ------------------ |
-| ALG       | {1, 2, 3, 4, 5, 6} |
-| TIMESTAMP | 1695215098.123456  |
-| VALUE     | 13.37              |
+| Type      | Format                                        |
+| --------- | --------------------------------------------- |
+| DEVICE    | Number in range from 0 to "number of devices" |
+| TIMESTAMP | 1695215098.123456                             |
+| VALUE     | 13.37                                         |
 
-Ex: `1,1695215098.123456,13.37/n`
+Ex: `12,1695215098.123456,13.37/n`
 
 ## Grafana
 * Username: admin
@@ -49,4 +76,18 @@ Ex: `1,1695215098.123456,13.37/n`
 * Username: user
 * Password: password
 * Database: core_db
+
+## SIP Sink
+Recieves Utf-8 encoded data, multiple samples can be separated by newline
+
+`DEVICE,TIMESTAMP,K-VALUE,M_VALUE/n`
+
+| Type      | Format                                        |
+| --------- | --------------------------------------------- |
+| DEVICE    | Number in range from 0 to "number of devices" |
+| TIMESTAMP | 1695215098.123456                             |
+| K-VALUE   | 13.37                                         |
+| M-VALUE   | -3.141                                        |
+
+Ex: `24,1695215098.123456,13.37,-3.141/n`
 

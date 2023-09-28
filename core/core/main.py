@@ -1,9 +1,12 @@
 #!/usr/bin/python
 
 import socket
+import os
 
 HOST = "0.0.0.0"  # Standard loopback interface address (localhost)
-PORT = 12000  # Port to listen on (non-privileged ports are > 1023)
+PORT = int(os.environ['CORE_PORT'])  # Port to listen on
+
+NUM_DEVICES = int(os.environ['NUM_DEVICES'])
 
 # import thread module
 from _thread import *
@@ -20,30 +23,25 @@ conn = mysql.connector.connect(
     database="core_db"
 )
 
-table_lookup = {
-    1: "table_a",
-    2: "table_b",
-    3: "table_c",
-    4: "table_d",
-    5: "table_e",
-    6: "table_f"
-}
+def table_lookup(num):
+    return "table_" + str(num)
 
 cursor = conn.cursor()
 
 insert = '''INSERT INTO `%s` (`timestamp`, `value`) VALUES ('%s', %s);'''
+
+start_time = time.time()
 
 # thread function
 def threaded(c):
     while True:
         try: 
             raw = c.recv(1024)
-            print(f"Received: {raw}")
+            #print(f"Received: {raw}")
         except:
             print("Could not receive raw data, connection close")
             break
-        if not raw: 
-            print("No raw data received, connection close")
+        if not raw:
             break
         
         if(raw == b''):
@@ -97,7 +95,7 @@ def threaded(c):
 
             # check if arg0 is a valid type
             try:
-                table = table_lookup[int(type_s)]
+                table = table_lookup(int(type_s))
             except:
                 print("Invalid not a type, continue")
                 continue
@@ -114,7 +112,7 @@ def threaded(c):
                 print("Could not insert into database, connection close")
                 break
             
-            print(f"Inserted: {val} into {table} @ {timestamp}")        
+            #print(f"Inserted: {val} into {table} @ {timestamp}")        
             
     # connection closed
     c.close()
@@ -122,7 +120,7 @@ def threaded(c):
 
 def Main():
 
-    for alg in table_lookup:
+    for device in range(NUM_DEVICES):
         # create table if none exists
         cursor.execute(('''CREATE TABLE IF NOT EXISTS `%s` (
             `id` int NOT NULL AUTO_INCREMENT,
@@ -130,7 +128,7 @@ def Main():
             `value` double NOT NULL,
             PRIMARY KEY (`id`, `timestamp`),
             UNIQUE KEY `timestamp` (`timestamp`)
-        );''' % table_lookup[alg]))
+        );''' % table_lookup(device)))
 
     conn.commit()
 
@@ -140,7 +138,7 @@ def Main():
     print(f"Started server on: {HOST}:{PORT}")
 
     # put the socket into listening mode
-    s.listen(5)
+    s.listen(NUM_DEVICES)
     print("socket is listening")
 
     # a forever loop until client wants to exit

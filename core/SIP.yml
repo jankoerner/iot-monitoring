@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+    sip:
+        container_name: sip
+        build: sip
+        env_file:
+            - ./SERVICE.env
+        depends_on:
+            core:
+                condition: service_healthy
+        networks:
+            - default
+            - corenetwork
+        ports:
+            - ${SINK_PORT}:${SINK_PORT}/tcp

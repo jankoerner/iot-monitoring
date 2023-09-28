@@ -4,16 +4,20 @@ services:
     core:
         container_name: core
         build: core
+        env_file:
+            - ./SERVICE.env
         depends_on:
             mysql:
                 condition: service_healthy
-        volumes:
-            - ./core:/core
         networks:
             - default
             - corenetwork
         ports:
-            - 12000:12000/tcp
+            - ${CORE_PORT}:${CORE_PORT}/tcp
+        healthcheck:
+            test: ["CMD", "nc", "-z", "localhost", "${CORE_PORT}"]
+            timeout: 2s
+            retries: 20
     mysql:
         container_name: mysql
         image: mysql
@@ -43,6 +47,7 @@ services:
             - corenetwork
             - default
     adminer:
+        container_name: adminer
         image: adminer
         ports:
             - 12002:8080

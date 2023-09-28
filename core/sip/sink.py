@@ -5,12 +5,14 @@ from _thread import *
 import threading
 import time
 import datetime
+import os
 
-NUM_DEVICES = 1
-FREQUENCY = 10 # Hz
+NUM_DEVICES = int(os.environ['NUM_DEVICES'])
+FREQUENCY = int(os.environ['SAMPLE_FREQ']) # Hz
 
 HOST = "0.0.0.0"  # Standard loopback interface address (localhost)
-PORT = 12001  # Port to listen on
+PORT = int(os.environ['SINK_PORT'])  # Port to listen on
+CORE_PORT = int(os.environ['CORE_PORT'])  # Core port to connect to
 
 frq = 1/FREQUENCY
 class SIP:
@@ -109,32 +111,26 @@ def socket_thread(c):
             k = float(k_s)
             m = float(m_s)
 
-            # Lock device
-
-            # Critical section
-            sink.setFunction(k, m)
-
-            # Release lock device  
+            sink.setFunction(k, m) 
     # connection closed
     c.close()
 
 def sample_thread():
     time_start = time.time()
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((HOST, 12000))
+    s.connect(("core", CORE_PORT))
 
     while True:
-        i = 0;
-        for sink in sinks:
-            i = i + 1
-            # Lock device
+        for i in range(NUM_DEVICES):
+            sink = sinks[i]
 
-            # Critical section
-            time_since_start = time.time() - time_start
-            prediction = sink.getPrediction(time_since_start)
-            # Release lock device
-            print(f"Sampled: {prediction} from {sink} @ {time_since_start}")
-            s.sendall(b'f"{i},{time_since_start},{prediction}"\n')
+            #time_since_start = time.time() - time_start
+            t = time.time()
+            prediction = sink.getPrediction(t)
+
+            if prediction != 0: # cheat
+                print(f"Sampled: {prediction} @ {t:.6f} from device {i}")
+                s.sendall(f"{i},{t:.6f},{prediction}\n".encode('utf-8'))
 
         time.sleep(frq)
 

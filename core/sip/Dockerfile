@@ -12,10 +12,9 @@ WORKDIR /core
 
 COPY . .
 
-RUN pip install -r requirements.txt
+#RUN pip install -r requirements.txt
 
-EXPOSE 12000:12000
 EXPOSE 12001:12001
 
 #ENTRYPOINT ["tail", "-f", "/dev/null"]
-ENTRYPOINT ["/usr/local/bin/python", "/core/main.py"]
+ENTRYPOINT ["/usr/local/bin/python", "/core/sink.py"]

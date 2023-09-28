@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+    sip:
+        container_name: sip
+        build: asr
+        env_file:
+            - ./SERVICE.env
+        networks:
+            - default
+            - corenetwork
+        ports:
+            - ${SINK_PORT}:${SINK_PORT}/tcp
