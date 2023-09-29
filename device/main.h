@@ -6,6 +6,7 @@ struct args {
   char* filename;
   int   poll_rate;
   int   algorithm;
+  int   duration; // seconds
 };
 
 int parseArgs(int argc, char** argv, struct args* args);

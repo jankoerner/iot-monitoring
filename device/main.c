@@ -18,8 +18,9 @@
 int main(int argc, char** argv) {
   struct args* args = malloc(sizeof(struct args));
   args->address = "127.0.0.1";
-  args->poll_rate = 1;
+  args->poll_rate = 1000;
   args->algorithm = 0;
+  args->duration = 300; // 5min
 
   if(argc > 1)
     parseArgs(argc, argv, args);
@@ -58,24 +59,27 @@ int main(int argc, char** argv) {
   size_t len = 0;
   ssize_t read;
   struct timespec* start = malloc(sizeof(struct timespec));
-  struct timespec* end = malloc(sizeof(struct timespec));
+  struct timespec* last_poll = malloc(sizeof(struct timespec));
+  struct timespec* curr = malloc(sizeof(struct timespec));
 
   fp = fopen(args->filename, "r");
   if (fp == NULL)
     return -1;
 
   read = getline(&line, &len, fp);
-  while (read != -1) {
-    clock_gettime(CLOCK_REALTIME, end);
-    if(start == NULL || (end->tv_sec - start->tv_sec) > args->poll_rate){
+  clock_gettime(CLOCK_REALTIME, start);
+  while (read != -1 && args->duration > curr->tv_sec - start->tv_sec){
+    clock_gettime(CLOCK_REALTIME, curr);
+    if(last_poll == NULL || (((curr->tv_sec * 1000) + (curr->tv_nsec / 1000000)) - ((last_poll->tv_sec * 1000) + (last_poll->tv_nsec / 1000000))) > args->poll_rate){
 
       printf("%s", line); // Algo goes here
 
       read = getline(&line, &len, fp);
-      clock_gettime(CLOCK_REALTIME, start);
+      clock_gettime(CLOCK_REALTIME, last_poll);
     }
-    else
-      sleep(0.1);
+    else{
+      usleep(100000); // 10ms
+    }
   }
 
   if(line)
@@ -97,6 +101,9 @@ int parseArgs(int argc, char** argv, struct args* args){
     }
     else if (strcmp(argv[i], "-t") == 0){
       args->poll_rate = atoi(argv[++i]);
+    }
+    else if (strcmp(argv[i], "-d") == 0){
+      args->duration = atoi(argv[++i]);
     }
     else if (strcmp(argv[i], "-a") == 0){
       args->algorithm = atoi(argv[++i]);
