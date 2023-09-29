@@ -57,6 +57,15 @@ services:
         networks:
             - corenetwork
             - default
+    ntp:
+        container_name: ntp
+        image: cturra/ntp:latest
+        restart: always
+        ports:
+        - 123:123/udp
+        environment:
+            - NTP_SERVERS="gbg1.ntp.se,gbg2.ntp.se"
+            - LOG_LEVEL=0
 
 networks:
   corenetwork:

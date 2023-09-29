@@ -50,6 +50,7 @@ Ex. Build and Start core with the Spanish Inquisition Protocol detatched
 
 | Port      | Service       |
 | --------- | ------------- |
+| 123/udp   | NTP           |
 | 3000/tcp  | Grafana       |
 | 12000/tcp | Core Receiver |
 | 12002/tcp | Adminer       |
