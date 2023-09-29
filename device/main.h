@@ -10,5 +10,6 @@ struct args {
 };
 
 int parseArgs(int argc, char** argv, struct args* args);
+int sendMessage(char* address, char* message);
 
 #endif // MAIN_H

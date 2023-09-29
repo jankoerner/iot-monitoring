@@ -25,35 +25,6 @@ int main(int argc, char** argv) {
   if(argc > 1)
     parseArgs(argc, argv, args);
 
-#if CONNECT_SERVER
-  int sockfd;
-  const struct sockaddr_in servaddr = {
-    .sin_family= AF_INET,
-    .sin_addr.s_addr= inet_addr(args->address),
-    .sin_port= htons(PORT)
-  };
-
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sockfd == -1){
-    printf("socket creation failed...\n");
-    exit(0);
-  }
-  else{
-    printf("Socket successfully created..\n");
-  }
-
-  // connect the client socket to server socket
-  if (connect(sockfd, (const struct sockaddr_in*)&servaddr, sizeof(servaddr))
-    != 0) {
-    printf("connection with the server failed...\n");
-    exit(0);
-  }
-  else
-  printf("connected to the server..\n");
-#endif
-
-
-
   FILE* fp;
   char* line = NULL;
   size_t len = 0;
@@ -70,9 +41,14 @@ int main(int argc, char** argv) {
   clock_gettime(CLOCK_REALTIME, start);
   while (read != -1 && args->duration > curr->tv_sec - start->tv_sec){
     clock_gettime(CLOCK_REALTIME, curr);
+    // I hate this line with a passion
     if(last_poll == NULL || (((curr->tv_sec * 1000) + (curr->tv_nsec / 1000000)) - ((last_poll->tv_sec * 1000) + (last_poll->tv_nsec / 1000000))) > args->poll_rate){
 
       printf("%s", line); // Algo goes here
+
+#if CONNECT_SERVER
+      sendMessage(args->address, line);
+#endif
 
       read = getline(&line, &len, fp);
       clock_gettime(CLOCK_REALTIME, last_poll);
@@ -86,9 +62,6 @@ int main(int argc, char** argv) {
     free(line);
 
   fclose(fp);
-#if CONNECT_SERVER
-  close(sockfd);
-#endif
   free(args);
   exit(0);
 }
@@ -119,3 +92,34 @@ int parseArgs(int argc, char** argv, struct args* args){
 
   return 0;
 }
+
+int sendMessage(char* address, char* message){
+  int sockfd;
+  const struct sockaddr_in servaddr = {
+    .sin_family= AF_INET,
+    .sin_addr.s_addr= inet_addr(address),
+    .sin_port= htons(PORT)
+  };
+
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (sockfd == -1){
+    printf("socket creation failed...\n");
+    exit(0);
+  }
+  else{
+    printf("Socket successfully created..\n");
+  }
+
+  // connect the client socket to server socket
+  if (connect(sockfd, (const struct sockaddr_in*)&servaddr, sizeof(servaddr))
+    != 0) {
+    printf("connection with the server failed...\n");
+    exit(0);
+  }
+  else
+    printf("connected to the server..\n");
+
+  close(sockfd);
+  return 0;
+}
+
