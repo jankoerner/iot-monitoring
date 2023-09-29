@@ -1,0 +1,9 @@
+1. Start core server, change connection.csv
+2. Enable ssh
+3. run deploy script, enable ntp, iptable rules
+4. startup script for algo
+    start monitoring
+    start algorithm, run for 5 mins
+5. Extract monitoring data from pi's and remove artifacts
+6. repeat 4 and 5 for all algorithm
+7. evalute the plan
