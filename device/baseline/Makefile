@@ -1,17 +1,20 @@
 IDIR=../shared
 BDIR = build
 CXX = g++
-CXXFLAGS = -std=c++17 -O3
+CXXFLAGS = -std=c++17 -g
 
 
- output: main.o utils.o
-	${CXX}  ${BDIR}/main.o ${BDIR}/utils.o -o ${BDIR}/baseline ${CXXFLAGS}
+ output: main.o utils.o filter.o
+	${CXX}  ${BDIR}/main.o ${BDIR}/utils.o ${BDIR}/filter.o -o ${BDIR}/baseline ${CXXFLAGS}
 
  main.o: main.cpp
 	${CXX} -c main.cpp -o ${BDIR}/$@ ${CXXFLAGS}
 
  utils.o: ${IDIR}/utils.cpp ${IDIR}/utils.hpp
 	${CXX} -c ${IDIR}/utils.cpp -o ${BDIR}/$@ ${CXXFLAGS}
+
+filter.o: ${IDIR}/filter.cpp ${IDIR}/filter.hpp
+	${CXX} -c ${IDIR}/filter.cpp -o ${BDIR}/$@ ${CXXFLAGS}
 
 #Just for testing on my local machine
 run_baseline:

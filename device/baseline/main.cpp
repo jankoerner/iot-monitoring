@@ -1,10 +1,12 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <thread>
 
 #include "../shared/utils.hpp"
+#include "../shared/filter.hpp"
 
 namespace{
     std::string DataFilepath;
@@ -20,6 +22,21 @@ float readDataPoint(){
 
     return std::stof(line);
 }
+
+void work(std::unique_ptr<Filter>& usedFilter, const std::string& ip,const int port,const float value){
+    if (usedFilter->filter(value)){
+        return; //if the value is filtered, then there is no work to do here
+    }
+
+    // TODO enable networking
+    Client client{ip,port};
+    auto msg = createMsg(AlgorithmId::BASELINE, value);
+    if (!client.sendMessage(msg)){
+        std::cout << "Sent Message failed" << "\n";
+    }
+    // TODO disable networking
+};
+
 
 int main(int argc, char *argv[]){
     if (argc < 6){
@@ -42,24 +59,15 @@ int main(int argc, char *argv[]){
     }
 
     DeviceId = deviceId.value(); 
-    
-    Client client{ip,port};
-
-    if (! client.connectToServer()){
-        return -1;
-    }
-
-    File = std::ifstream{DataFilepath};
-
+    File = std::ifstream{DataFilepath};    
     auto totalIterations = SampleDuration * ((SamplePeriod / 1000) * 60);
+
+    //std::unique_ptr<Filter> usedFilter = std::make_unique<Baseline>();
+    std::unique_ptr<Filter> usedFilter = std::make_unique<StaticFilter>(0.15, 10);
 
     for(int i = 0; i < totalIterations; ++i){
         const auto value = readDataPoint();
-        auto msg = createMsg(AlgorithmId::BASELINE, value);
-        if (!client.sendMessage(msg)){
-            std::cout << "Sent Message failed" << "\n";
-        }
-
+        work(usedFilter,ip,port,value);
         std::this_thread::sleep_for(std::chrono::milliseconds(SamplePeriod));
     }
     

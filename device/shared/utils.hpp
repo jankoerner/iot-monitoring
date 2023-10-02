@@ -18,13 +18,14 @@ class Client {
     public: 
     Client(const std::string& ip, const std::int64_t port);
     ~Client();
-    bool connectToServer();
     bool sendMessage(std::string& msg);
 
     private:
     std::string Ip;
     std::int64_t Port;
-    int socket_fd;
+    int Socket_fd;
+    
+    void disconnect();
+    bool connectToServer();
 };
-
 #endif
