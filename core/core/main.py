@@ -16,17 +16,21 @@ import datetime
 
 import mysql.connector
 
-conn = mysql.connector.connect(
-    host="mysql",
-    user="user",
-    password="password",
-    database="core_db"
-)
+
+def restartMysql():
+    conn = mysql.connector.connect(
+        host="mysql",
+        user="user",
+        password="password",
+        database="core_db"
+    )
+    cursor = conn.cursor()
+    return conn, cursor
 
 def table_lookup(num):
     return "table_" + str(num)
 
-cursor = conn.cursor()
+conn, cursor = restartMysql();
 
 insert = '''INSERT INTO `%s` (`timestamp`, `value`) VALUES ('%s', %s);'''
 
@@ -102,17 +106,22 @@ def threaded(c):
 
             #unixtime = "{:.6f}".format(float(time_s))
             timestamp = datetime.datetime.fromtimestamp(unixtime).strftime('%Y-%m-%d %H:%M:%S.%f')
-            val = float(value_s)
-        
+            val = f"{float(value_s):.12f}"
+
+            
+            stmnt = (insert % (table, timestamp, val))
+
             try:
-                stmnt = (insert % (table, timestamp, val))
                 cursor.execute(stmnt)
                 conn.commit()
             except:
-                print("Could not insert into database, connection close")
-                break
+                print(f"Could not insert into database for statment: {stmnt}")
+                cursor = None
+                conn = None
+                conn, cursor = restartMysql();
+                continue
             
-            #print(f"Inserted: {val} into {table} @ {timestamp}")        
+            print(f"Inserted: {val} into {table} @ {timestamp}")        
             
     # connection closed
     c.close()
@@ -132,13 +141,48 @@ def Main():
 
     conn.commit()
 
+    for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
+        af, socktype, proto, canonname, sa = res
+        try:
+            s = socket.socket(af, socktype, proto)
+        except socket.error as msg:
+            s = None
+            continue
+
+        try:
+            s.bind((HOST, PORT))
+            s.listen()
+        except socket.error as msg:
+            s.close()
+            s = None
+            continue
+        break
+    if s is None:
+        print('could not open socket')
+        sys.exit(1)
+    
+    # establish connection with client
+    c, addr = s.accept()
+
+    print('Connected to :', addr[0], ':', addr[1])
+
+    # Start a new thread and return its identifier
+    start_new_thread(threaded, (c,))
+
+    c.close()
+    print("connection closed")
+
+
+
+
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((HOST, PORT))
 
     print(f"Started server on: {HOST}:{PORT}")
 
     # put the socket into listening mode
-    s.listen(NUM_DEVICES)
+    s.listen() # apperently, this value is the default value: /proc/sys/net/core/somaxconn
     print("socket is listening")
 
     # a forever loop until client wants to exit
@@ -151,7 +195,6 @@ def Main():
 
         # Start a new thread and return its identifier
         start_new_thread(threaded, (c,))
-    s.close()
 
 
 if __name__ == '__main__':

@@ -108,6 +108,7 @@ def socket_thread(c):
 
             #unixtime = "{:.6f}".format(float(time_s))
             timestamp = datetime.datetime.fromtimestamp(unixtime).strftime('%Y-%m-%d %H:%M:%S.%f')
+            print(k_s, " ", m_s)
             k = float(k_s)
             m = float(m_s)
 
@@ -129,8 +130,8 @@ def sample_thread():
             prediction = sink.getPrediction(t)
 
             if prediction != 0: # cheat
-                print(f"Sampled: {prediction} @ {t:.6f} from device {i}")
-                s.sendall(f"{i},{t:.6f},{prediction}\n".encode('utf-8'))
+                print(f"Sampled: {prediction:.12f} @ {t:.6f} from device {i}")
+                s.sendall(f"{i},{t:.6f},{prediction:.12f}\n".encode('utf-8'))
 
         time.sleep(frq)
 
@@ -145,7 +146,7 @@ s.bind((HOST, PORT))
 print(f"Started server on: {HOST}:{PORT}")
 
 # Listen for incoming connections
-s.listen(NUM_DEVICES)  # Listen for a single incoming connection
+s.listen()  # Listen for a single incoming connection
 
 start_new_thread(sample_thread, ())
 
