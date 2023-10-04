@@ -28,19 +28,17 @@ void work(std::unique_ptr<Filter>& usedFilter, const std::string& ip,const int p
         return; //if the value is filtered, then there is no work to do here
     }
 
-    // TODO enable networking
     Client client{ip,port};
     auto msg = createMsg(AlgorithmId::BASELINE, value);
     if (!client.sendMessage(msg)){
         std::cout << "Sent Message failed" << "\n";
     }
-    // TODO disable networking
 };
 
 
 int main(int argc, char *argv[]){
-    if (argc < 6){
-        std::cout << "You need to specify the filepath, the sample period (ms),the sample duration (min), the server ip, the server port and the Filepath to the Id-File";
+    if (argc < 7){
+        std::cout << "You need to specify the filepath, the sample period (ms),the sample duration (min), the server ip, the server port, Filepath to the Id-File and the selected algorithm";
         return 1;
     }
     
@@ -51,24 +49,43 @@ int main(int argc, char *argv[]){
     auto port = std::stoi(argv[5]);
     auto deviceIdFilepath = argv[6];
 
+    auto algorithmId = std::stoi(argv[7]);
+
     auto deviceId = getDeviceId(deviceIdFilepath);
 
     if (!deviceId.has_value()){
         std::cout << "Specified Id-File does not exists" << "\n";
-        return -1;
+        return 1;
     }
 
     DeviceId = deviceId.value(); 
     File = std::ifstream{DataFilepath};    
     auto totalIterations = SampleDuration * ((SamplePeriod / 1000) * 60);
 
-    //std::unique_ptr<Filter> usedFilter = std::make_unique<Baseline>();
-    std::unique_ptr<Filter> usedFilter = std::make_unique<StaticFilter>(0.15, 10);
+    std::unique_ptr<Filter> usedFilter;
 
-    for(int i = 0; i < totalIterations; ++i){
+    switch (algorithmId){
+    case AlgorithmId::STATICFILTER:
+        usedFilter = std::make_unique<StaticFilter>(0.05, 2);
+        break;
+    case AlgorithmId::BASELINE :
+    default:
+        usedFilter = std::make_unique<Baseline>();
+        break;
+    }
+
+    auto endTime = std::chrono::system_clock::now() + std::chrono::minutes(SampleDuration);
+
+    for(;;){
+        auto nextIterationStart = std::chrono::system_clock::now() + std::chrono::milliseconds(SamplePeriod);
         const auto value = readDataPoint();
         work(usedFilter,ip,port,value);
-        std::this_thread::sleep_for(std::chrono::milliseconds(SamplePeriod));
+
+        if(nextIterationStart > endTime){
+            return 0;
+        }
+
+        std::this_thread::sleep_until(nextIterationStart);
     }
     
     return 0;

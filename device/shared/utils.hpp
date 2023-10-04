@@ -6,7 +6,9 @@
 #include <optional>
 
 enum AlgorithmId {
-    BASELINE = 1
+    BASELINE = 1,
+    STATICFILTER = 2,
+    ADAPTIVEFILTER = 3
 };
 
 std::string createMsg(const AlgorithmId algoId, const float value);

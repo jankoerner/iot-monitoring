@@ -53,13 +53,16 @@ void Filter::updateWindow(const double value){
     return;
 }
 
+Baseline::Baseline() : Filter{0,0}{
+    return;
+}
+
 bool Baseline::filter(const double value){
     return false; //There is no filter in the baseline implementation
 };
 
 StaticFilter::StaticFilter(const double threshold, const std::int64_t windowSize) : 
-Filter{threshold,windowSize}
-{
+Filter{threshold,windowSize}{
     return;
 };
 

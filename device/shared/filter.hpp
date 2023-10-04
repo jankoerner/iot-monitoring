@@ -24,6 +24,7 @@ class Filter{
 
 class Baseline : public Filter {
     public: 
+    Baseline();
     bool filter(const double value);
 };
 
