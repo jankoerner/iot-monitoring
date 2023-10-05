@@ -34,6 +34,16 @@ class StaticMeanFilter : public Filter {
     bool filter(const double value);
 };
 
+class StaticFilter : public Filter {
+    public:
+    StaticFilter(const double threshold);
+    bool filter(const double value);
+
+    private:
+    bool Initialized;
+    double PreviousSentValue;
+};
+
 class AdaptiveFilter : public Filter {
     public:
     AdaptiveFilter(const float initialThreshold, const float minThreshold, const std::int64_t windowSize);

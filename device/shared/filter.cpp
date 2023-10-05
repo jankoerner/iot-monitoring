@@ -79,6 +79,26 @@ bool StaticMeanFilter::filter(const double value){
     return false;
 }
 
+StaticFilter::StaticFilter(const double threshold) :  Filter{threshold,0}{
+    return;
+}
+
+bool StaticFilter::filter(const double value){
+    if (!Initialized){
+        PreviousSentValue = value;
+        Initialized = true;
+        return false;
+    }
+
+    auto absDifference = std::abs(PreviousSentValue - value);
+    if (absDifference / PreviousSentValue <= Threshold ){
+        return true;
+    }
+
+    PreviousSentValue = value;
+    return false;
+}
+
 AdaptiveFilter::AdaptiveFilter(float initialThreshold, const float minThreshold, const std::int64_t windowSize) : 
 MinThreshold{minThreshold}, Filter{initialThreshold, windowSize} {
     return;

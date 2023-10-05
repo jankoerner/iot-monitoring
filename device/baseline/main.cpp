@@ -66,6 +66,8 @@ int main(int argc, char *argv[]){
 
     switch (algorithmId){
     case AlgorithmId::STATICFILTER:
+        usedFilter = std::make_unique<StaticFilter>(0.05);
+    case AlgorithmId::STATICMEANFILTER:
         usedFilter = std::make_unique<StaticMeanFilter>(0.05, 5);
         break;
     case AlgorithmId::BASELINE :
