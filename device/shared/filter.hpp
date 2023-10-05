@@ -28,9 +28,9 @@ class Baseline : public Filter {
     bool filter(const double value);
 };
 
-class StaticFilter : public Filter{
+class StaticMeanFilter : public Filter {
     public:
-    StaticFilter(const double threshold, const std::int64_t windowSize);
+    StaticMeanFilter(const double threshold, const std::int64_t windowSize);
     bool filter(const double value);
 };
 

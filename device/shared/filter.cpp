@@ -61,12 +61,12 @@ bool Baseline::filter(const double value){
     return false; //There is no filter in the baseline implementation
 };
 
-StaticFilter::StaticFilter(const double threshold, const std::int64_t windowSize) : 
+StaticMeanFilter::StaticMeanFilter(const double threshold, const std::int64_t windowSize) : 
 Filter{threshold,windowSize}{
     return;
 };
 
-bool StaticFilter::filter(const double value){
+bool StaticMeanFilter::filter(const double value){
     const auto mean = Filter::calculateWindowMean();
     updateWindow(value);
 
