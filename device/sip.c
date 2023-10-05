@@ -11,20 +11,21 @@
 
 #define PATH_TO_DATA "../host/datasets/cpu-splitted/part_22.csv"
 
-//TMP
-#define FREQUENCY 12.549123873
+#define FREQUENCY 12
 
-#define ERROR_THRESHOLD 8.19
+#define ERROR_THRESHOLD 2
 
 #define ROW_BUFFER_SIZE 100
 
-#define SLIDING_WINDOW_SIZE 10
+#define SLIDING_WINDOW_SIZE 20
 
 #define CSV_FILE_SIZE 36000
 
 #define ADDRESS '127.0.0.1'
 
 #define PORT 12001
+
+#define EMWA_ALPHA 0.25
 
 //Linear values:
 long double m = 0.0;
@@ -37,6 +38,9 @@ long double sink_k = 0.0;
 long double* m_ptr = &m;
 long double* k_ptr = &k;
 
+double raw_value; 
+long double emwa_m = 0.0;
+
 double predicted_sink_value = 0.0;
 double predicted_client_value = 0.0;
 
@@ -45,6 +49,16 @@ double local_sink = 0.0;
 struct timeval tv;
 
 double iteration_time = 1.0 / FREQUENCY;
+
+char buffer[2048];
+char buffer_ref[2048];
+char buffer_filtered[2048];
+
+char* address = "127.0.0.1";
+
+char* message;
+char* message_ref;
+char* message_filtered;
 
 void sink(double prediction, int timeStamp) {
     local_sink = prediction;
@@ -77,6 +91,37 @@ int sendMessage(char* address, char* message){
   else
     // printf("Messsage to send: %s\n", message);
     send(sockfd, message, strlen(message), 0);
+
+  close(sockfd);
+  return 0;
+}
+
+int sendRef(char* address, char* message, char* message2){
+  int sockfd;
+  const struct sockaddr_in servaddr = {
+    .sin_family= AF_INET,
+    .sin_addr.s_addr= inet_addr(address),
+    .sin_port= htons(12000)
+  };
+
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (sockfd == -1){
+    printf("socket creation failed...\n");
+    exit(0);
+  }
+  else{
+    // printf("Socket successfully created..\n");
+  }
+
+  // connect the client socket to server socket
+  if (connect(sockfd,(const struct sockaddr_in*)&servaddr, sizeof(servaddr)) != 0) {
+    printf("connection with the server failed...\n");
+    exit(0);
+  }
+  else
+    // printf("Messsage to send: %s\n", message);
+    send(sockfd, message, strlen(message), 0);
+    send(sockfd, message2, strlen(message2), 0);
 
   close(sockfd);
   return 0;
@@ -132,16 +177,9 @@ int main(int argc, char** argv) {
     double values[SLIDING_WINDOW_SIZE];
     double timestamps[SLIDING_WINDOW_SIZE];
     
-    while(feof(fp) != 1 && count < CSV_FILE_SIZE) {        
+    while(feof(fp) != 1 && count < CSV_FILE_SIZE) {
         //Retrieve next data set: (Query Sensors)
         fgets(row, ROW_BUFFER_SIZE, fp);
-        //Init stuff (Ignore first line (VALUES, TIMESTAMP))
-        if(firstRow == 0) {
-            data = strtok(row, "\n");
-            firstRow++;
-            // printf("-----------------------\n");
-            continue;
-        }
 
         //First SLIDING_WINDOW_SIZE data points are init, will be sent to sink too
         if(count < SLIDING_WINDOW_SIZE) {
@@ -149,7 +187,9 @@ int main(int argc, char** argv) {
             timestamps[count] = 0.0;
             //printf("Timestamp: %f\n", timestamps[count]);
             data = strtok(row, "\n");
-            values[count] = strtof(data, NULL);
+            raw_value = atof(data);
+            emwa_m = EMWA_ALPHA * raw_value + (1 - EMWA_ALPHA) * emwa_m;
+            values[count] = emwa_m;
             count++;
             continue;
         }
@@ -166,7 +206,11 @@ int main(int argc, char** argv) {
         //printf("Second Row: %s\n", row);
         data = strtok(row, "\n");
         //printf("Third row: %s\n", data);
-        current_value = atof(data);
+
+        raw_value = atof(data);
+        emwa_m = EMWA_ALPHA * raw_value + (1 - EMWA_ALPHA) * emwa_m;
+        current_value = emwa_m;
+
         //printf("\n");
 
         //printf("Current timestamp %f\n", current_timestamp);
@@ -218,21 +262,23 @@ int main(int argc, char** argv) {
             // printf("Sending new K=%f and M=%f\n", client_predict_k, client_predict_m);
             // printf("\n");
 
-            char buffer[2048];
-
-            char* address = "127.0.0.1";
-
             sprintf(buffer, "0,%f,%.15Lf,%.15Lf", current_timestamp, client_predict_k, client_predict_m);
 
-            char* message = buffer;
-
+            message = buffer;
 
             sendMessage(address, message);
+            
 
             sink_k = client_predict_k;
             sink_m = client_predict_m;
 
         }
+
+        sprintf(buffer_ref, "1,%f,%.15f\n", current_timestamp, raw_value);
+        sprintf(buffer_filtered, "2,%f,%.15f", current_timestamp, current_value);
+        message_ref = buffer_ref;
+        message_filtered = buffer_filtered;
+        sendRef(address, message_ref, message_filtered);
 
         usleep(iteration_time * 1000000);  // Sleep in microsecond
         count++; 

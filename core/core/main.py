@@ -30,14 +30,13 @@ def restartMysql():
 def table_lookup(num):
     return "table_" + str(num)
 
-conn, cursor = restartMysql();
-
 insert = '''INSERT INTO `%s` (`timestamp`, `value`) VALUES ('%s', %s);'''
 
 start_time = time.time()
 
 # thread function
 def threaded(c):
+    conn, cursor = restartMysql();
     while True:
         try: 
             raw = c.recv(1024)
@@ -115,20 +114,23 @@ def threaded(c):
             try:
                 cursor.execute(stmnt)
                 conn.commit()
-            except:
+            except mysql.connector.Error as e:
                 print(f"Could not insert into database for statment: {stmnt}")
+                print(e)
                 cursor = None
                 conn = None
                 conn, cursor = restartMysql();
                 continue
             
-            print(f"Inserted: {val} into {table} @ {timestamp}")        
+            print(f"Inserted: {stmnt}")        
             
     # connection closed
     c.close()
 
 
 def Main():
+
+    conn, cursor = restartMysql();
 
     for device in range(NUM_DEVICES):
         # create table if none exists
@@ -141,6 +143,9 @@ def Main():
         );''' % table_lookup(device)))
 
     conn.commit()
+
+    cursor.close()
+    conn.close()
 
     for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
         af, socktype, proto, canonname, sa = res
