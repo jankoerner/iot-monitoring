@@ -107,7 +107,12 @@ def socket_thread(c):
                 continue
 
             #unixtime = "{:.6f}".format(float(time_s))
+            global globtime
+            globtime = unixtime
             timestamp = datetime.datetime.fromtimestamp(unixtime).strftime('%Y-%m-%d %H:%M:%S.%f')
+
+            # print time diff unixtime from current time
+
             print(k_s, " ", m_s)
             k = float(k_s)
             m = float(m_s)
@@ -130,7 +135,8 @@ def sample_thread():
             prediction = sink.getPrediction(t)
 
             if prediction != 0: # cheat
-                print(f"Sampled: {prediction:.12f} @ {t:.6f} from device {i}")
+                global globtime
+                print(f"Sampled: {prediction:.12f} @ {t:.6f} from device {i}, diff: {time.time() - globtime}")
                 s.sendall(f"{i},{t:.6f},{prediction:.12f}\n".encode('utf-8'))
 
         time.sleep(frq)

@@ -63,11 +63,12 @@ def threaded(c):
             try:
                 args = line.split(",")
             except ValueError:
-                print("Invalid data format, continue")
+                print(f"Invalid format: {raw}")
+                print(f"Received: {raw}")
                 continue
 
             if(len(args) != 3):
-                print("Invalid data format, continue")
+                print(f"Missing args: {raw}")
                 continue
  
             #(INT, TIME, FLOAT)
@@ -78,30 +79,30 @@ def threaded(c):
             value_s = args[2]
 
             if (not type_s.isdigit()):
-                print("Invalid type format, continue")
+                print(f"Invalid type: {raw}")
                 continue
             
             # check if arg1 is a unix time with at most five decumals
             try:
                 unixtime = float(time_s)
             except:
-                print("Invalid time format, continue")
+                print(f"Invalid time: {raw}")
                 continue
             if (len(time_s.split(".")) == 2):
                 if(len(time_s.split(".")[1]) > 6):
-                    print("Invalid time format, continue")
+                    print(f"Invalid time: {raw}")
                     continue
 
             # check if arg2 is a float
-            if (not value_s.replace('.', '', 1).isdigit()): 
-                print("Invalid data format, continue")
+            if (not value_s.replace('.', '', 1).lstrip('-').isdigit() or value_s.count('-') > 1 or value_s.count('.') > 1 ):
+                print(f"Invalid value: {raw}")
                 continue
 
             # check if arg0 is a valid type
             try:
                 table = table_lookup(int(type_s))
             except:
-                print("Invalid not a type, continue")
+                print(f"Invalid type: {raw}")
                 continue
 
             #unixtime = "{:.6f}".format(float(time_s))
