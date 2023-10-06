@@ -66,7 +66,7 @@ def threaded(c):
                 print(f"Received: {raw}")
                 continue
 
-            if(len(args) != 3):
+            if(len(args) != 4):
                 print(f"Missing args: {raw}")
                 continue
  
@@ -136,9 +136,8 @@ def threaded(c):
 def Main():
 
     conn, cursor = restartMysql();
-
     for device in range(NUM_DEVICES):
-        for alg in range(1, 9) # fuckit
+        for alg in range(1, 9): # fuckit
             # create table if none exists
             cursor.execute(('''CREATE TABLE IF NOT EXISTS `%s` (
                 `id` int NOT NULL AUTO_INCREMENT,
