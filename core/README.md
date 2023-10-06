@@ -53,20 +53,33 @@ Ex. Build and Start core with the Spanish Inquisition Protocol detatched
 | 123/udp   | NTP           |
 | 3000/tcp  | Grafana       |
 | 12000/tcp | Core Receiver |
+| 12001/tcp | Sink Service  |
 | 12002/tcp | Adminer       |
 
 ## Core
 Recieves Utf-8 encoded data, multiple samples can be separated by newline
 
-`ALG,TIMESTAMP,VALUE/n`
+`DEVICE,ALG,TIMESTAMP,VALUE/n`
 
 | Type      | Format                                        |
 | --------- | --------------------------------------------- |
 | DEVICE    | Number in range from 0 to "number of devices" |
+| ALG       | Alg ID                                        |
 | TIMESTAMP | 1695215098.123456                             |
 | VALUE     | 13.37                                         |
 
-Ex: `12,1695215098.123456,13.37/n`
+| ID | Alg Name              |
+| -- | --------------------- |
+| 1  | Baseline              |
+| 2  | Static Filter         |
+| 3  | Static Mean Filter    |
+| 4  | LMS Filter            |
+| 5  | Addaptive Sample Rate |
+| 6  | PLA                   |
+| 7  | SIP Filtered          |
+| 8  | SIP                   |
+
+Ex: `12,2,1695215098.123456,13.37/n`
 
 ## Grafana
 * Username: admin

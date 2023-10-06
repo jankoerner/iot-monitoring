@@ -27,8 +27,8 @@ def restartMysql():
     cursor = conn.cursor()
     return conn, cursor
 
-def table_lookup(num):
-    return "table_" + str(num)
+def table_lookup(device, alg):
+    return "d_" + str(device) + "_" + str(alg) +
 
 insert = '''INSERT INTO `%s` (`timestamp`, `value`) VALUES ('%s', %s);'''
 
@@ -73,12 +73,17 @@ def threaded(c):
             #(INT, TIME, FLOAT)
 
             # Check types
-            type_s  = args[0]
-            time_s  = args[1]
-            value_s = args[2]
+            device_s  = args[0]
+            alg_s  = args[1]
+            time_s  = args[2]
+            value_s = args[3]
 
-            if (not type_s.isdigit()):
-                print(f"Invalid type: {raw}")
+            if (not device_s.isdigit()):
+                print(f"Invalid device: {raw}")
+                continue
+
+            if (not alg_s.isdigit()):
+                print(f"Invalid alg: {raw}")
                 continue
             
             # check if arg1 is a unix time with at most five decumals
@@ -97,11 +102,11 @@ def threaded(c):
                 print(f"Invalid value: {raw}")
                 continue
 
-            # check if arg0 is a valid type
+            # check if arg0 is a valid device
             try:
-                table = table_lookup(int(type_s))
+                table = table_lookup(int(device_s), int(alg_s))
             except:
-                print(f"Invalid type: {raw}")
+                print(f"Invalid device: {raw}")
                 continue
 
             #unixtime = "{:.6f}".format(float(time_s))
@@ -133,14 +138,15 @@ def Main():
     conn, cursor = restartMysql();
 
     for device in range(NUM_DEVICES):
-        # create table if none exists
-        cursor.execute(('''CREATE TABLE IF NOT EXISTS `%s` (
-            `id` int NOT NULL AUTO_INCREMENT,
-            `timestamp` DATETIME(6) NOT NULL,
-            `value` double NOT NULL,
-            PRIMARY KEY (`id`, `timestamp`),
-            UNIQUE KEY `timestamp` (`timestamp`)
-        );''' % table_lookup(device)))
+        for alg in range(1, 9) # fuckit
+            # create table if none exists
+            cursor.execute(('''CREATE TABLE IF NOT EXISTS `%s` (
+                `id` int NOT NULL AUTO_INCREMENT,
+                `timestamp` DATETIME(6) NOT NULL,
+                `value` double NOT NULL,
+                PRIMARY KEY (`id`, `timestamp`),
+                UNIQUE KEY `timestamp` (`timestamp`)
+            );''' % table_lookup(device, alg)))
 
     conn.commit()
 
