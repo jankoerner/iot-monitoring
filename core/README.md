@@ -68,16 +68,16 @@ Recieves Utf-8 encoded data, multiple samples can be separated by newline
 | TIMESTAMP | 1695215098.123456                             |
 | VALUE     | 13.37                                         |
 
-| ID | Alg Name              |
-| -- | --------------------- |
-| 1  | Baseline              |
-| 2  | Static Filter         |
-| 3  | Static Mean Filter    |
-| 4  | LMS Filter            |
-| 5  | Addaptive Sample Rate |
-| 6  | PLA                   |
-| 7  | SIP Filtered          |
-| 8  | SIP                   |
+| ID | Alg Name             |
+| -- | -------------------- |
+| 1  | Baseline             |
+| 2  | Static Filter        |
+| 3  | Static Mean Filter   |
+| 4  | LMS Filter           |
+| 5  | Adaptive Sample Rate |
+| 6  | PLA                  |
+| 7  | SIP EWMA Filter      |
+| 8  | SIP                  |
 
 Ex: `12,2,1695215098.123456,13.37/n`
 
