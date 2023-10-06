@@ -28,7 +28,7 @@ def restartMysql():
     return conn, cursor
 
 def table_lookup(device, alg):
-    return "d_" + str(device) + "_" + str(alg) +
+    return "d_" + str(device) + "_" + str(alg)
 
 insert = '''INSERT INTO `%s` (`timestamp`, `value`) VALUES ('%s', %s);'''
 
