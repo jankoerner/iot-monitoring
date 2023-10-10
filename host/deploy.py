@@ -7,7 +7,7 @@ def copy_folder(src, dest, connections):
     for connection in connections.items():
         ip,user,pw = extract_conn_infos(connection)
         
-        print(f"Transfer {src} to {dest}")
+        print(f"Transfer {src} to {ip}:{dest}")
         
         client = create_ssh(ip,user,pw)
         client.exec_command('mkdir -p ' + dest)
@@ -22,34 +22,33 @@ def copy_folder(src, dest, connections):
         
 
 def execute_root_cmd(cmd,pw,client):
-    stdin, _, _ = client.exec_command(cmd)
+    stdin, stdout, _ = client.exec_command(cmd)
     stdin.write(pw + "\n")
     stdin.flush() 
+    stdout.channel.recv_exit_status()
     
 def enable_ntp():
     return
 
-def iptables(src, dest, connections):
+def iptables(src, dest, connections, persistent):
     copy_folder(src, dest, connections)
     
     for connection in connections.items():
         ip,user,pw = extract_conn_infos(connection)
         client = create_ssh(ip,user,pw)
         
-        print("Installing iptables")        
+        print(f"Installing iptables on: {ip}")        
         execute_root_cmd(f"cd {dest}; (sudo -S DEBIAN_FRONTEND=noninteractive apt-get -yq install ./*)",pw,client)
         print("Installation done!")
-        print("Setting up the iptable rules")
+        print(f"Setting up the iptable rules on: {ip}")
+        #execute_root_cmd("sudo sudo iptables -F",pw,client) # This cmd sometimes takes a lot of time, I have no Idea why
         execute_root_cmd("sudo iptables -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT; sudo iptables -A OUTPUT -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT", pw, client)
-        execute_root_cmd("sudo iptables -A OUTPUT -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT", pw,client)
-        execute_root_cmd("sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT", pw, client)
-        execute_root_cmd("sudo iptables -A OUTPUT -p udp --sport 123 -j ACCEPT", pw, client)
-        execute_root_cmd("sudo iptables -A INPUT -p tcp -m tcp --dport 12000:12005 -j ACCEPT", pw, client)
-        execute_root_cmd("sudo iptables -A OUTPUT -p tcp --sport 12000:12005 -j ACCEPT", pw, client)
+        execute_root_cmd("sudo iptables -A INPUT -p udp --sport 123 -j ACCEPT; sudo iptables -A OUTPUT -p udp --dport 123 -j ACCEPT", pw, client)
+        execute_root_cmd("sudo iptables -A INPUT -p tcp -m tcp --dport 12000:12005 -j ACCEPT; sudo iptables -A OUTPUT -p tcp --sport 12000:12005 -j ACCEPT", pw, client)
         execute_root_cmd("sudo iptables -A INPUT -p icmp -j ACCEPT", pw, client)
-        execute_root_cmd("sudo iptables -P INPUT DROP", pw, client)
-        execute_root_cmd("sudo iptables -P OUTPUT DROP", pw, client)
-        execute_root_cmd("sudo iptables-save | sudo tee /etc/iptables/rules.v4", pw, client)
+        execute_root_cmd("sudo iptables -P OUTPUT DROP; sudo iptables -P INPUT DROP", pw, client)
+        if persistent:
+            execute_root_cmd("sudo iptables-save | sudo tee /etc/iptables/rules.v4 >> /dev/null", pw, client)
         print("Iptables setup done!")
                 
         client.close()
@@ -61,7 +60,7 @@ def install_monitoring(src, dest, connections):
         ip,user,pw = extract_conn_infos(connection)
         client = create_ssh(ip,user,pw)
         
-        print("Installing monitoring tools!")
+        print(f"Installing monitoring tools on {ip}")
         
         stdin, _, _ = client.exec_command(f"cd {dest}; (sudo -S apt-get -y install ./*)")
         stdin.write(pw + "\n")
@@ -94,6 +93,21 @@ def copy_data(src, dest, connections):
         device_no += 1
         scp.close()
         client.close()
+
+def start_ntp(server_ip,connections):
+    for connection in connections.items():
+        ip,user,pw = extract_conn_infos(connection)
+        print("Enable ntp on:", ip)
+
+        client = create_ssh(ip,user,pw)
+        execute_root_cmd("sudo timedatectl set-ntp true", pw, client)
+        execute_root_cmd(f'echo -e "[Time]\nNTP={server_ip}\nPollIntervalMinSec=16\nPollIntervalMaxSec=2048" | sudo tee /etc/systemd/timesyncd.conf >> /dev/null', pw, client)
+        execute_root_cmd("sudo systemctl enable systemd-timesyncd.service", pw, client)
+        execute_root_cmd("sudo systemctl restart systemd-timesyncd.service", pw, client)
+
+        client.close()
+        print("Ntp enabled!")
+
                     
 def main():
     parser = argparse.ArgumentParser(description="Script to deploy data and binaries to the pi's")
@@ -102,6 +116,7 @@ def main():
     parser.add_argument('-d', '--data', help='Path to the folder with the data-sets')
     parser.add_argument('-m', '--monitoring', help='Path to the folder of the monitoring binaries')
     parser.add_argument('-i', '--iptables', help='Path to the folder with the iptable binaries')
+    parser.add_argument('-n', '--ntp', help="If the ntp-service should be started", action="store_true")
     
     args = parser.parse_args()
     
@@ -117,7 +132,10 @@ def main():
         install_monitoring(args.monitoring, iot_folder + "/monitoring", connections)
     
     if args.iptables:
-        iptables(args.iptables, iot_folder + "/iptables", connections)
+        iptables(args.iptables, iot_folder + "/iptables", connections, False)
+
+    if args.ntp:
+        start_ntp("200.150.100.10",connections)
     
 if __name__ == "__main__":
     main()
