@@ -1,7 +1,7 @@
 IDIR=../shared
 BDIR = build
 CXX = g++
-CXXFLAGS = -std=c++17 -g
+CXXFLAGS = -std=c++17 -O3
 
 
  output: main.o utils.o filter.o

@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+    sip:
+        container_name: lms
+        build: lms
+        env_file:
+            - ./SERVICE.env
+        depends_on:
+            core:
+                condition: service_healthy
+        networks:
+            - default
+            - corenetwork
+        ports:
+            - ${LMS_PORT}:${LMS_PORT}/tcp

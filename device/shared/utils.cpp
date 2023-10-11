@@ -35,8 +35,6 @@ std::optional<std::int64_t> getDeviceId(const std::string& deviceIdFilepath){
     std::getline(fileStream,line);
 
     fileStream.close();
-    std::cout << line.size() << "\n";  
-
     return std::stoi(line);
 }
 

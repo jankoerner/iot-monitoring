@@ -23,17 +23,13 @@ float readDataPoint(){
     return std::stof(line);
 }
 
-void work(std::unique_ptr<Filter>& usedFilter, const std::string& ip,const int port,const float value){
+void work(std::unique_ptr<Filter>& usedFilter, const std::string& ip,const int port, const float value){
     if (usedFilter->filter(value)){
         return; //if the value is filtered, then there is no work to do here
     }
-
-    Client client{ip,port};
-    auto msg = createMsg(AlgorithmId::BASELINE, value);
-    if (!client.sendMessage(msg)){
-        std::cout << "Sent Message failed" << "\n";
-    }
-};
+    usedFilter->sendMessage(value);
+    return;
+}
 
 
 int main(int argc, char *argv[]){
@@ -65,16 +61,22 @@ int main(int argc, char *argv[]){
     std::unique_ptr<Filter> usedFilter;
 
     switch (algorithmId){
+    case::AlgorithmId::LMSFILTER:
+        usedFilter = std::make_unique<LMSFilter>(0.5, 5, 1, DeviceId, SamplePeriod, ip, port);
+        break;
     case AlgorithmId::STATICFILTER:
-        usedFilter = std::make_unique<StaticFilter>(0.05);
+        usedFilter = std::make_unique<StaticFilter>(0.5, DeviceId, ip, port);
+        break;
     case AlgorithmId::STATICMEANFILTER:
-        usedFilter = std::make_unique<StaticMeanFilter>(0.05, 5);
+        usedFilter = std::make_unique<StaticMeanFilter>(0.5, 5, DeviceId, ip, port);
         break;
     case AlgorithmId::BASELINE :
     default:
-        usedFilter = std::make_unique<Baseline>();
+        usedFilter = std::make_unique<Baseline>(DeviceId, ip, port);
         break;
     }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     auto endTime = std::chrono::system_clock::now() + std::chrono::minutes(SampleDuration);
 

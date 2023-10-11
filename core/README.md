@@ -9,6 +9,7 @@ An application running on a core server is responsible for receiving data and di
 | ------------ |-------------------------- |
 | CORE_PORT    | Core service port         |
 | SINK_PORT    | Sink service port         |
+| LMS_PORT     | LMS service port          |
 | NUM_DEVICES  | Number of devices in test |
 | SAMPLE_FREQ  | Sink sample frequency     |
 
@@ -39,6 +40,7 @@ List of services:
 | BASE    | Bare essentials for baseline     |
 | SIP     | The Spanish Inquisition Protocol |
 | ASR     | TODO                             |
+| LMS     | LMS Filter                       |
 
 Ex. Build and Start core with the Spanish Inquisition Protocol detatched
 ```console
@@ -55,6 +57,7 @@ Ex. Build and Start core with the Spanish Inquisition Protocol detatched
 | 12000/tcp | Core Receiver |
 | 12001/tcp | Sink Service  |
 | 12002/tcp | Adminer       |
+| 12004/tcp | LMS Service   |
 
 ## Core
 Recieves Utf-8 encoded data, multiple samples can be separated by newline

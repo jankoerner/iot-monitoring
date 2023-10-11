@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Define the list of valid services
-valid_services="ALL BASE SIP ASR"
+valid_services="ALL BASE SIP ASR LMS"
 
 # Check if at least 2 arguments are provided
 if [ $# -lt 2 ]; then
@@ -12,7 +12,7 @@ fi
 # Check if the provided service is valid
 SERVICE="$1"
 if ! echo "$valid_services" | grep -wq "$SERVICE"; then
-    echo "Invalid SERVICE. Please choose one of: ALL, BASE, SIP, ASR."
+    echo "Invalid SERVICE. Please choose one of: ALL, BASE, SIP, ASR, LMS."
     exit 1
 fi
 

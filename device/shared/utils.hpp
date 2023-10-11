@@ -5,11 +5,11 @@
 #include <cstdint>
 #include <optional>
 
-enum AlgorithmId {
+enum AlgorithmId : int {
     BASELINE = 1,
     STATICFILTER = 2,
     STATICMEANFILTER = 3,
-    ADAPTIVEFILTER = 4
+    LMSFILTER = 4
 };
 
 std::string createMsg(const AlgorithmId algoId, const float value);
