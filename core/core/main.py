@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# Test cmd: echo 1,1,$(date +%s).000000,1 | nc localhost 12000
 
 import socket
 import os
@@ -8,6 +9,8 @@ PORT = int(os.environ['CORE_PORT'])  # Port to listen on
 
 NUM_DEVICES = int(os.environ['NUM_DEVICES'])
 
+NUM_ALGS = 8
+
 # import thread module
 from _thread import *
 import threading
@@ -16,6 +19,8 @@ import datetime
 
 import mysql.connector
 
+start_time = time.time()
+device_start_time_delta = [-1] * NUM_DEVICES * NUM_ALGS
 
 def restartMysql():
     conn = mysql.connector.connect(
@@ -31,8 +36,6 @@ def table_lookup(device, alg):
     return "d_" + str(device) + "_" + str(alg)
 
 insert = '''INSERT INTO `%s` (`timestamp`, `value`) VALUES ('%s', %s);'''
-
-start_time = time.time()
 
 # thread function
 def threaded(c):
@@ -86,7 +89,7 @@ def threaded(c):
                 print(f"Invalid alg: {raw}")
                 continue
             
-            # check if arg1 is a unix time with at most five decumals
+            # check if arg1 is a unix time with at most five decumals, lol float
             try:
                 unixtime = float(time_s)
             except:
@@ -104,12 +107,24 @@ def threaded(c):
 
             # check if arg0 is a valid device
             try:
-                table = table_lookup(int(device_s), int(alg_s))
+                device_id = int(device_s)
+                alg_id = int(alg_s)
+                table = table_lookup(device_id, alg_id)
             except:
                 print(f"Invalid device: {raw}")
                 continue
 
-            #unixtime = "{:.6f}".format(float(time_s))
+            key = device_id * NUM_ALGS + alg_id
+
+            # fuckit, this will solve time whitout needing changes on the devices
+            if (device_start_time_delta[key] == -1):
+                device_start_time_delta[key] = unixtime - start_time
+                unixtime = start_time
+            else:
+                unixtime = unixtime - device_start_time_delta[key]
+
+
+
             timestamp = datetime.datetime.fromtimestamp(unixtime).strftime('%Y-%m-%d %H:%M:%S.%f')
             val = f"{float(value_s):.12f}"
 
@@ -182,10 +197,6 @@ def Main():
 
     c.close()
     print("connection closed")
-
-
-
-
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((HOST, PORT))
