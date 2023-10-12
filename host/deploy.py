@@ -41,7 +41,7 @@ def iptables(src, dest, connections, persistent):
         #execute_root_cmd("sudo sudo iptables -F",pw,client) # This cmd sometimes takes a lot of time, I have no Idea why
         execute_root_cmd("sudo iptables -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT; sudo iptables -A OUTPUT -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT", pw, client)
         execute_root_cmd("sudo iptables -A INPUT -p udp --sport 123 -j ACCEPT; sudo iptables -A OUTPUT -p udp --dport 123 -j ACCEPT", pw, client)
-        execute_root_cmd("sudo iptables -A INPUT -p tcp -m tcp --dport 12000:12005 -j ACCEPT; sudo iptables -A OUTPUT -p tcp --sport 12000:12005 -j ACCEPT", pw, client)
+        execute_root_cmd("sudo iptables -A INPUT -p tcp -m tcp --sport 12000:12005 -j ACCEPT; sudo iptables -A OUTPUT -p tcp --dport 12000:12005 -j ACCEPT", pw, client)
         execute_root_cmd("sudo iptables -A INPUT -p icmp -j ACCEPT", pw, client)
         execute_root_cmd("sudo iptables -P OUTPUT DROP; sudo iptables -P INPUT DROP", pw, client)
         if persistent:
@@ -83,7 +83,7 @@ def copy_data(src, dest, connections):
         scp.put(f"{src}/part_{device_no}.csv",remote_path=dest)
         
         client.exec_command(f'mv {dest}/part_{device_no}.csv {dest}/data.csv')
-        client.exec_command(f'cd {dest}; echo "{device_no}" >> id.txt')
+        client.exec_command(f'cd {dest}; echo "{device_no}" > id.txt')
         
         print("Transfer done!")
         
