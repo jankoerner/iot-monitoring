@@ -16,5 +16,5 @@ filter.o: filter.cpp filter.hpp
 	${CXX} -c filter.cpp -o ${BDIR}/$@ ${CXXFLAGS}
 
  clean:
-	rm -rf ${BDIR}/*
+	rm -rf ${BDIR}/*							
 
