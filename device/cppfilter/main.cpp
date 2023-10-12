@@ -5,8 +5,8 @@
 #include <string>
 #include <thread>
 
-#include "../shared/utils.hpp"
-#include "../shared/filter.hpp"
+#include "utils.hpp"
+#include "filter.hpp"
 
 namespace{
     std::string DataFilepath;
@@ -31,7 +31,6 @@ void work(std::unique_ptr<Filter>& usedFilter, const std::string& ip,const int p
     return;
 }
 
-
 int main(int argc, char *argv[]){
     if (argc < 7){
         std::cout << "You need to specify the filepath, the sample period (ms),the sample duration (min), the server ip, the server port, Filepath to the Id-File and the selected algorithm";
@@ -44,7 +43,6 @@ int main(int argc, char *argv[]){
     auto ip = argv[4];
     auto port = std::stoi(argv[5]);
     auto deviceIdFilepath = argv[6];
-
     auto algorithmId = std::stoi(argv[7]);
 
     auto deviceId = getDeviceId(deviceIdFilepath);
