@@ -31,8 +31,8 @@ void Filter::sendMessage(const double value){
     }
 }
 
-Baseline::Baseline(const std::int64_t deviceId,const std::string &ip, const std::int64_t port) : 
-Filter{0, 0, AlgorithmId::BASELINE, DeviceId, ip, port}{
+Baseline::Baseline(const std::int64_t deviceId, const std::string &ip, const std::int64_t port) : 
+Filter{0, 0, AlgorithmId::BASELINE, deviceId, ip, port}{
     return;
 }
 
@@ -151,7 +151,6 @@ bool LMSFilter::filter(const double value){
 }
 
 void LMSFilter::sendMessage(const double value){
-    std::cout << "Value sent: " << value << "\n";
     Client client{Filter::Ip,Filter::Port};
     std::string msg = std::to_string(Filter::DeviceId) + ",DATA," + std::to_string(value) + "," +std::to_string(CurrentState);
     client.sendMessage(msg);
