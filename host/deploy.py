@@ -26,9 +26,6 @@ def execute_root_cmd(cmd,pw,client):
     stdin.write(pw + "\n")
     stdin.flush() 
     stdout.channel.recv_exit_status()
-    
-def enable_ntp():
-    return
 
 def iptables(src, dest, connections, persistent):
     copy_folder(src, dest, connections)
@@ -80,7 +77,7 @@ def copy_data(src, dest, connections):
         client = create_ssh(ip,user,pw)
         client.exec_command('mkdir -p ' + dest)
         
-        print("Start transfer data...")
+        print(f"Transfer {src}/part_{device_no}.csv to {ip}:{dest}")
         
         scp = SCPClient(client.get_transport())
         scp.put(f"{src}/part_{device_no}.csv",remote_path=dest)
@@ -126,10 +123,10 @@ def main():
         copy_data(args.data, iot_folder + "/data", connections)
         
     if args.binaries:
-        copy_folder(args.binaries, iot_folder + "/binaries", connections)
+        copy_folder(args.binaries, iot_folder, connections)
     
     if args.monitoring:
-        install_monitoring(args.monitoring, iot_folder + "/monitoring", connections)
+        install_monitoring(args.monitoring, iot_folder, connections)
     
     if args.iptables:
         iptables(args.iptables, iot_folder + "/iptables", connections, False)
