@@ -13,7 +13,7 @@ def copy_folder(src, dest, connections):
         client.exec_command('mkdir -p ' + dest)
         
         scp = SCPClient(client.get_transport())
-        scp.put(src, recursive=True, remote_path=dest)
+        scp.put(src, recursive=True, remote_path=iot_folder)
                 
         scp.close()
         client.close()
@@ -123,10 +123,10 @@ def main():
         copy_data(args.data, iot_folder + "/data", connections)
         
     if args.binaries:
-        copy_folder(args.binaries, iot_folder, connections)
+        copy_folder(args.binaries, iot_folder + "/binaries", connections)
     
     if args.monitoring:
-        install_monitoring(args.monitoring, iot_folder, connections)
+        install_monitoring(args.monitoring, iot_folder + "/monitoring", connections)
     
     if args.iptables:
         iptables(args.iptables, iot_folder + "/iptables", connections, False)
