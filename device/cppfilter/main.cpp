@@ -53,6 +53,9 @@ int main(int argc, char *argv[]){
     }
 
     DeviceId = deviceId.value(); 
+
+    std::cout << "Device Id: " << DeviceId << "\n"; 
+
     File = std::ifstream{DataFilepath};    
     auto totalIterations = SampleDuration * ((SamplePeriod / 1000) * 60);
 
@@ -81,6 +84,9 @@ int main(int argc, char *argv[]){
     for(;;){
         auto nextIterationStart = std::chrono::system_clock::now() + std::chrono::milliseconds(SamplePeriod);
         const auto value = readDataPoint();
+
+        std::cout << "Data point:" << value << "\n";
+
         work(usedFilter,ip,port,value);
 
         if(nextIterationStart > endTime){

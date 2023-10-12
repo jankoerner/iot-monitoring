@@ -26,6 +26,9 @@ DeviceId{deviceId}, Ip{ip}, Port{port}{
 void Filter::sendMessage(const double value){
     Client client{Ip,Port};
     auto msg = createMsg(DeviceId, AlgoId, value);
+
+    std::cout << "Message: " << msg << "\n"; 
+
     if (!client.sendMessage(msg)){
         std::cout << "Sent Message failed" << "\n";
     }
