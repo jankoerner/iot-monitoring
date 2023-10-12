@@ -9,13 +9,18 @@
 #include <netdb.h>
 
 #include "main.h"
+#include "adaptive_sampling.h"
 
 #define CONNECT_SERVER 0
+
+typedef int (*alg)(float, float*, struct args*);
 
 // Server
 #define PORT 12000
 
 int main(int argc, char** argv) {
+  int id = 0;
+  alg algs[1] = {adaptiveSampling};
   struct args* args = malloc(sizeof(struct args));
   args->address = "127.0.0.1";
   args->poll_rate = 1000;
@@ -37,21 +42,31 @@ int main(int argc, char** argv) {
   if (fp == NULL)
     return -1;
 
+  float* out = malloc(sizeof(float));
+  char* end;
+  char* message;
+  __time_t curr_ms, last_ms;
   read = getline(&line, &len, fp);
   clock_gettime(CLOCK_REALTIME, start);
   while (read != -1 && args->duration > curr->tv_sec - start->tv_sec){
     clock_gettime(CLOCK_REALTIME, curr);
-    // I hate this line with a passion
-    if(last_poll == NULL || (((curr->tv_sec * 1000) + (curr->tv_nsec / 1000000)) - ((last_poll->tv_sec * 1000) + (last_poll->tv_nsec / 1000000))) > args->poll_rate){
+    curr_ms = (curr->tv_sec * 1000) + (curr->tv_nsec / 1000000);
 
-      printf("%s", line); // Algo goes here
+    if(last_poll == NULL || (curr_ms - last_ms) > args->poll_rate){
 
+      double d = strtod(line, &end);
+      if (algs[args->algorithm](d, out, args)){
+        message = createMessage(id, args->algorithm, curr_ms, out);
+        printf("%s", message);
 #if CONNECT_SERVER
-      sendMessage(args->address, line);
+        sendMessage(args->address, line);
 #endif
+      }
+
 
       read = getline(&line, &len, fp);
       clock_gettime(CLOCK_REALTIME, last_poll);
+      last_ms = (last_poll->tv_sec * 1000) + (last_poll->tv_nsec / 1000000);
     }
     else{
       usleep(100000); // 10ms
@@ -121,5 +136,11 @@ int sendMessage(char* address, char* message){
 
   close(sockfd);
   return 0;
+}
+
+char* createMessage(int id, int algorithm, __time_t time, float* value){
+  char* message = malloc(sizeof(char) * 100);
+  sprintf(message, "%d,%d,%ld,%f\n", id, algorithm, time, *value);
+  return message;
 }
 

@@ -1,5 +1,6 @@
 #ifndef MAIN_H
 #define MAIN_H
+#include <time.h>
 
 struct args {
   char* address;
@@ -11,5 +12,6 @@ struct args {
 
 int parseArgs(int argc, char** argv, struct args* args);
 int sendMessage(char* address, char* message);
+char* createMessage(int id, int algorithm, __time_t time, float* value);
 
 #endif // MAIN_H
