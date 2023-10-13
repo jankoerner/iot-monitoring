@@ -5,6 +5,7 @@
 struct args {
   char* address;
   char* filename;
+  char* idpath;
   int   poll_rate;
   int   algorithm;
   int   duration; // seconds
@@ -12,6 +13,6 @@ struct args {
 
 int parseArgs(int argc, char** argv, struct args* args);
 int sendMessage(char* address, char* message);
-char* createMessage(int id, int algorithm, __time_t time, float* value);
+void createMessage(int id, int algorithm, __time_t time, float* value, char* message);
 
 #endif // MAIN_H
