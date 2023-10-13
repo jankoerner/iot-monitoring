@@ -19,7 +19,8 @@ import datetime
 
 import mysql.connector
 
-start_time = time.time()
+start_time = time.time_ns() // 1000
+
 device_start_time_delta = [-1] * NUM_DEVICES * NUM_ALGS
 
 def restartMysql():
@@ -35,7 +36,7 @@ def restartMysql():
 def table_lookup(device, alg):
     return "d_" + str(device) + "_" + str(alg)
 
-insert = '''INSERT INTO `%s` (`timestamp`, `value`) VALUES ('%s', %s);'''
+insert = '''INSERT INTO `%s` (`timestamp`, `value`, `deltatime`) VALUES ('%s', %s, %s);'''
 
 # thread function
 def threaded(c):
@@ -91,14 +92,10 @@ def threaded(c):
             
             # check if arg1 is a unix time with at most five decumals, lol float
             try:
-                unixtime = float(time_s)
+                unixtime = int(time_s)
             except:
                 print(f"Invalid time: {raw}")
                 continue
-            if (len(time_s.split(".")) == 2):
-                if(len(time_s.split(".")[1]) > 6):
-                    print(f"Invalid time: {raw}")
-                    continue
 
             # check if arg2 is a float
             if (not value_s.replace('.', '', 1).lstrip('-').isdigit() or value_s.count('-') > 1 or value_s.count('.') > 1 ):
@@ -119,17 +116,19 @@ def threaded(c):
             # fuckit, this will solve time whitout needing changes on the devices
             if (device_start_time_delta[key] == -1):
                 device_start_time_delta[key] = unixtime - start_time
+                delta = unixtime - start_time
                 unixtime = start_time
             else:
-                unixtime = unixtime - device_start_time_delta[key]
+                delta = device_start_time_delta[key]
+                unixtime = unixtime - delta
 
 
 
-            timestamp = datetime.datetime.fromtimestamp(unixtime).strftime('%Y-%m-%d %H:%M:%S.%f')
+            timestamp = datetime.datetime.fromtimestamp(unixtime/ 1e6).strftime('%Y-%m-%d %H:%M:%S.%f')
             val = f"{float(value_s):.12f}"
 
             
-            stmnt = (insert % (table, timestamp, val))
+            stmnt = (insert % (table, timestamp, val, delta))
 
             try:
                 cursor.execute(stmnt)
@@ -158,6 +157,7 @@ def Main():
                 `id` int NOT NULL AUTO_INCREMENT,
                 `timestamp` DATETIME(6) NOT NULL,
                 `value` double NOT NULL,
+                `deltatime` double NOT NULL,
                 PRIMARY KEY (`id`, `timestamp`),
                 UNIQUE KEY `timestamp` (`timestamp`)
             );''' % table_lookup(device, alg)))
