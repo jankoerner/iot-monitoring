@@ -13,8 +13,8 @@
 
 std::string createMsg(const AlgorithmId algoId, const float value){
     using namespace std::chrono;
-    auto utcMilliSec = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
-    auto msg = std::to_string(algoId) + "," + std::to_string(utcMilliSec) + "," + std::to_string(value) + "\n";
+    auto utcMicroSec = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+    auto msg = std::to_string(algoId) + "," + std::to_string(utcMicroSec) + "," + std::to_string(value) + "\n";
 
     return msg;
 }

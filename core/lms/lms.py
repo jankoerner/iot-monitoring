@@ -35,8 +35,8 @@ class LMSFilter:
 
     def send_msg(self, value):
         print("Value sent:", value)
-        t = time.time()
-        msg = f"{self.deviceId},4,{t:.6f},{value:.12f}\n".encode('utf-8')
+        t = int(time.time() * 1_000_000)
+        msg = f"{self.deviceId},4,{t},{value:.12f}\n".encode('utf-8')
         self.coreSocket.sendall(msg)
 
     def predict(self):
