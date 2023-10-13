@@ -1,5 +1,6 @@
 import argparse
 import paramiko
+import os
 from scp import SCPClient
 from utils import *
 
@@ -19,7 +20,28 @@ def copy_folder(src, dest, connections):
         client.close()
     
         print(f"Transfer done!")
+
+def retrieve_results(connections, dest):
+    for connection in connections.items():
+        ip,user,pw = extract_conn_infos(connection)
+        client = create_ssh(ip,user,pw)
+        sftp = client.open_sftp()
+
+        dataFiles = sftp.listdir("/home/pi/iot-monitoring/monitoring/results") 
+
+        for file in dataFiles:
+            if file.split(".")[1] == "stats":
+                print(f"Create csv file for {file} on {ip}")
+                cmd = (f"cd /home/pi/iot-monitoring/monitoring/results;sadf -dh -- -u -n DEV -r -d -F --iface=eth0 --dev=mmcblk0 {file} > {file}.csv")
+                client.exec_command(cmd)
+                remoteFile = f"/home/pi/iot-monitoring/monitoring/results/{file}.csv"
+                localPath = os.getcwd()
+                print(f"Copy file to {localPath}")
+                sftp.get(remoteFile, f"{localPath}/results/{file}.csv")
         
+        sftp.close()
+        client.close()
+
 
 def execute_root_cmd(cmd,pw,client):
     stdin, stdout, _ = client.exec_command(cmd)
@@ -114,6 +136,7 @@ def main():
     parser.add_argument('-m', '--monitoring', help='Path to the folder of the monitoring binaries')
     parser.add_argument('-i', '--iptables', help='Path to the folder with the iptable binaries')
     parser.add_argument('-n', '--ntp', help="If the ntp-service should be started", action="store_true")
+    parser.add_argument('-r', '--results', help="Creates a csv file from the result, then transfers them to the host", action="store_true")
     
     args = parser.parse_args()
     
@@ -133,6 +156,9 @@ def main():
 
     if args.ntp:
         start_ntp("200.150.100.10",connections)
+    
+    if args.results:
+        retrieve_results(connections,"results")
     
 if __name__ == "__main__":
     main()
