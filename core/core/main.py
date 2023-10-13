@@ -19,7 +19,7 @@ import datetime
 
 import mysql.connector
 
-start_time = time.time_ns() // 1000
+start_time = time.time_ns() // 1e6
 
 device_start_time_delta = [-1] * NUM_DEVICES * NUM_ALGS
 

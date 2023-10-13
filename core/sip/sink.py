@@ -22,7 +22,7 @@ class SIP:
         self.lastSampledTime = 0
     
     def getPrediction(self, t):
-        self.lastSampledTime = float(f"{time.time():.6f}")
+        self.lastSampledTime = time.time_ns() / 1e6
         return self.k * t + self.m
     
     def getFunction(self):
@@ -81,14 +81,10 @@ def socket_thread(c):
             
             # check if arg1 is a unix time with at most five decumals
             try:
-                unixtime = float(time_s)
+                unixtime = int(time_s)
             except:
                 print("Invalid time format, continue")
                 continue
-            if (len(time_s.split(".")) == 2):
-                if(len(time_s.split(".")[1]) > 6):
-                    print("Invalid time format, continue")
-                    continue
 
             # check if arg2 is a float
             if (not k_s.replace('.', '', 1).lstrip('-').isdigit() or k_s.count('-') > 1 or k_s.count('.') > 1 ):
@@ -107,7 +103,7 @@ def socket_thread(c):
                 continue
 
             #unixtime = "{:.6f}".format(float(time_s))
-            timestamp = datetime.datetime.fromtimestamp(unixtime).strftime('%Y-%m-%d %H:%M:%S.%f')
+            timestamp = datetime.datetime.fromtimestamp(unixtime / 1e6).strftime('%Y-%m-%d %H:%M:%S.%f')
 
             # print time diff unixtime from current time
 
@@ -120,7 +116,7 @@ def socket_thread(c):
     c.close()
 
 def sample_thread():
-    time_start = time.time()
+    time_start = time.time_ns() / 1e6
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect(("core", CORE_PORT))
 
@@ -128,13 +124,13 @@ def sample_thread():
         for i in range(NUM_DEVICES):
             sink = sinks[i]
 
-            #time_since_start = time.time() - time_start
-            t = time.time()
+            #time_since_start = time.time_ns() - time_start
+            t = time.time_ns() / 1e6
             prediction = sink.getPrediction(t)
 
             if prediction != 0: # cheat
-                print(f"Sampled: {prediction:.12f} @ {t:.6f} from device {i}")
-                s.sendall(f"{i},7,{t:.6f},{prediction:.12f}\n".encode('utf-8'))
+                print(f"Sampled: {prediction:.12f} @ {t} from device {i}")
+                s.sendall(f"{i},7,{t},{prediction:.12f}\n".encode('utf-8'))
 
         time.sleep(frq)
 
