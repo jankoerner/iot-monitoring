@@ -47,7 +47,6 @@ def cpp_filter_cmd(algo, interval, duration):
     algoId = algorithm_id(algo)
     algoPort = algorithm_port(algo)
     cmd = f"cd {iot_folder}/binaries/; (nohup ./cppfilter {DATA_FILE_PATH} {interval} {duration} {SERVER_IP} {algoPort} {ID_FILE_PATH} {algoId} &)"
-    print(cmd)
     return cmd
 
 def startup(connections, cmd):
@@ -62,14 +61,16 @@ def start_monitoring(connections, interval, total_ticks, algo):
     for connection in connections.items():
         ip, user, pw = extract_conn_infos(connection)
 
-        print(f"Start monitoring on: {ip}")
-        
-        filename = algo + ".stats"
+        print(f"Start monitoring on: {ip}")             
         
         client = create_ssh(ip,user,pw)      
+        sftp = client.open_sftp()
+        device_id = sftp.file("/home/pi/iot-monitoring/data/id.txt",'r').readline().rstrip()
+        filename = f"{device_id}_{algo}.stats"
+
         client.exec_command(f"mkdir -p {iot_folder}/monitoring/results")
-        
         cmd = f"cd {iot_folder}/monitoring/results;(sar -u -n DEV -r -d -F -o {filename} {interval} {total_ticks} > /dev/null 2>&1 &)"
+        
         client.exec_command(cmd)
         client.close()
     
@@ -79,7 +80,7 @@ def main():
     parser.add_argument('-c', '--connections', help='Path to the file with connection information')
     parser.add_argument('-m', '--monitoring', help='If the monitoring should be started', action="store_true")
     parser.add_argument('-i', '--interval', help='The interval in which stats are monitored in seconds (default: %(default)s)', default=1)
-    parser.add_argument('-d', '--duration', help='The duration in which the stats should be monitored in minutes (default: %(default)s)', default=5)
+    parser.add_argument('-d', '--duration', help='The duration in which the stats should be monitored in minutes (default: %(default)s)', default=1)
     parser.add_argument('-a', '--algorithm', 
                         help='Which algorithm should be started (default: %(default)s)', 
                         default='baseline',
