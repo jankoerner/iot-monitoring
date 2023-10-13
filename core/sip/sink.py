@@ -22,7 +22,7 @@ class SIP:
         self.lastSampledTime = 0
     
     def getPrediction(self, t):
-        self.lastSampledTime = time.time_ns() / 1e6
+        self.lastSampledTime = time.time_ns() // 1e6
         return self.k * t + self.m
     
     def getFunction(self):
@@ -103,7 +103,7 @@ def socket_thread(c):
                 continue
 
             #unixtime = "{:.6f}".format(float(time_s))
-            timestamp = datetime.datetime.fromtimestamp(unixtime / 1e6).strftime('%Y-%m-%d %H:%M:%S.%f')
+            timestamp = datetime.datetime.fromtimestamp(unixtime // 1e6).strftime('%Y-%m-%d %H:%M:%S.%f')
 
             # print time diff unixtime from current time
 
@@ -116,7 +116,7 @@ def socket_thread(c):
     c.close()
 
 def sample_thread():
-    time_start = time.time_ns() / 1e6
+    time_start = time.time_ns() // 1e6
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect(("core", CORE_PORT))
 
@@ -125,7 +125,7 @@ def sample_thread():
             sink = sinks[i]
 
             #time_since_start = time.time_ns() - time_start
-            t = time.time_ns() / 1e6
+            t = int(time.time_ns() // 1e6)
             prediction = sink.getPrediction(t)
 
             if prediction != 0: # cheat

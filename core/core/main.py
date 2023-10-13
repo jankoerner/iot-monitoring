@@ -124,7 +124,7 @@ def threaded(c):
 
 
 
-            timestamp = datetime.datetime.fromtimestamp(unixtime/ 1e6).strftime('%Y-%m-%d %H:%M:%S.%f')
+            timestamp = datetime.datetime.fromtimestamp(unixtime / 1e6).strftime('%Y-%m-%d %H:%M:%S.%f')
             val = f"{float(value_s):.12f}"
 
             
