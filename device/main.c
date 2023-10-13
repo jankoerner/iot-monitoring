@@ -19,16 +19,26 @@ typedef int (*alg)(float, float*, struct args*);
 #define PORT 12000
 
 int main(int argc, char** argv) {
-  int id = 0;
+  int id = -1;
   alg algs[1] = {adaptiveSampling};
   struct args* args = malloc(sizeof(struct args));
   args->address = "127.0.0.1";
   args->poll_rate = 1000;
   args->algorithm = 0;
   args->duration = 300; // 5min
+  args->filename = "../data/data.csv";
+  args->idpath = "../data/id.txt";
 
   if(argc > 1)
     parseArgs(argc, argv, args);
+
+  FILE* idpath = fopen(args->idpath, "r");
+  char* idline = NULL;
+  size_t idlen = 0;
+  if(!getline(&idline, &idlen, idpath))
+    id = atoi(idline);
+  fclose(idpath);
+
 
   FILE* fp;
   char* line = NULL;
@@ -44,19 +54,20 @@ int main(int argc, char** argv) {
 
   float* out = malloc(sizeof(float));
   char* end;
-  char* message;
-  __time_t curr_ms, last_ms;
+  char* message = malloc(sizeof(char) * 100);
+  __time_t curr_us, last_ms;
   read = getline(&line, &len, fp);
   clock_gettime(CLOCK_REALTIME, start);
   while (read != -1 && args->duration > curr->tv_sec - start->tv_sec){
     clock_gettime(CLOCK_REALTIME, curr);
-    curr_ms = (curr->tv_sec * 1000) + (curr->tv_nsec / 1000000);
+    curr_us = (curr->tv_sec * 1000000) + (curr->tv_nsec / 1000);
 
-    if(last_poll == NULL || (curr_ms - last_ms) > args->poll_rate){
+    if(last_poll == NULL || ((curr_us/1000) - last_ms) > args->poll_rate){
 
       double d = strtod(line, &end);
       if (algs[args->algorithm](d, out, args)){
-        message = createMessage(id, args->algorithm, curr_ms, out);
+        message = "";
+        createMessage(id, args->algorithm, curr_us, out, message);
         printf("%s", message);
 #if CONNECT_SERVER
         sendMessage(args->address, line);
@@ -73,6 +84,7 @@ int main(int argc, char** argv) {
     }
   }
 
+  free(message);
   if(line)
     free(line);
 
@@ -138,9 +150,7 @@ int sendMessage(char* address, char* message){
   return 0;
 }
 
-char* createMessage(int id, int algorithm, __time_t time, float* value){
-  char* message = malloc(sizeof(char) * 100);
+void createMessage(int id, int algorithm, __time_t time, float* value, char* message){
   sprintf(message, "%d,%d,%ld,%f\n", id, algorithm, time, *value);
-  return message;
 }
 
