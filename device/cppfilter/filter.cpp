@@ -43,17 +43,22 @@ bool Baseline::filter(const double value){
     return false; 
 };
 
-StaticMeanFilter::StaticMeanFilter(const double threshold, const std::int64_t windowSize, const std::int64_t deviceId,
-const std::string &ip, const std::int64_t port) : 
-WindowIndex{0}, WindowFull{false}, Filter{threshold, windowSize, AlgorithmId::STATICMEANFILTER, deviceId, ip, port}{
+StaticMeanFilter::StaticMeanFilter(const double threshold, const std::int64_t 
+windowSize, const std::int64_t deviceId, const std::string &ip, const std::int64_t port, 
+const bool sampleAllData) : 
+WindowIndex{0}, WindowFull{false}, SampleAllData(sampleAllData), Filter{threshold, windowSize, AlgorithmId::STATICMEANFILTER, deviceId, ip, port}{
     return;
 };
 
 bool StaticMeanFilter::filter(const double value){
-    const auto mean = calculateWindowMean();
+    Mean = calculateWindowMean();
     updateWindow(value);
 
-    return differenceBelowThreshold(mean,value,Filter::Threshold);
+    return differenceBelowThreshold(Mean,value,Filter::Threshold) && (!SampleAllData);
+}
+
+void StaticMeanFilter::sendMessage(const double){
+    Filter::sendMessage(Mean);
 }
 
 double StaticMeanFilter::calculateWindowMean(){
@@ -97,8 +102,9 @@ void StaticMeanFilter::updateWindow(const double value){
     return;
 }
 
-StaticFilter::StaticFilter(const double threshold, const std::int64_t deviceId, const std::string &ip, const std::int64_t port) :  
-Filter{threshold, 0, AlgorithmId::STATICFILTER, deviceId, ip, port}{
+StaticFilter::StaticFilter(const double threshold, const std::int64_t deviceId, 
+const std::string &ip, const std::int64_t port, const bool sampleAllData) :  
+SampleAllData{sampleAllData},Filter{threshold, 0, AlgorithmId::STATICFILTER, deviceId, ip, port}{
     return;
 }
 
@@ -110,11 +116,15 @@ bool StaticFilter::filter(const double value){
     }
 
     if (differenceBelowThreshold(PreviousSentValue,value,Filter::Threshold)){
-        return true;
+        return true && (!SampleAllData); //If we sample all the data, then we don't filter any value
     }
     
     PreviousSentValue = value;
     return false;
+}
+
+void StaticFilter::sendMessage(const double){
+    Filter::sendMessage(PreviousSentValue);
 }
 
 LMSFilter::LMSFilter(const float threshold, const std::int64_t windowSize, 

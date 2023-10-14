@@ -33,27 +33,34 @@ class Baseline : public Filter {
 
 class StaticMeanFilter : public Filter {
     public:
-    StaticMeanFilter(const double threshold, const std::int64_t windowSize, const std::int64_t deviceId,
-    const std::string &ip, const std::int64_t port);
+    StaticMeanFilter(const double threshold, const std::int64_t windowSize, 
+    const std::int64_t deviceId,const std::string &ip, const std::int64_t port,
+    const bool sampleAllData);
     virtual ~StaticMeanFilter() = default;
     bool filter(const double value) override;
+    void sendMessage(const double value) override;
 
     private:
     double calculateWindowMean();
     void updateWindow(const double value);
     std::int64_t WindowIndex;
     bool WindowFull;
+    double Mean;
+    bool SampleAllData;
 };
 
 class StaticFilter : public Filter {
     public:
-    StaticFilter(const double threshold, const std::int64_t deviceId, const std::string &ip, const std::int64_t port);
+    StaticFilter(const double threshold, const std::int64_t deviceId, 
+    const std::string &ip, const std::int64_t port, const bool sampleAllData);
     virtual ~StaticFilter() = default;
     bool filter(const double value) override;
+    void sendMessage(const double value) override;
 
     private:
     bool Initialized;
     double PreviousSentValue;
+    bool SampleAllData;
 };
 
 class LMSFilter : public Filter {

@@ -32,7 +32,7 @@ void work(std::unique_ptr<Filter>& usedFilter, const std::string& ip,const int p
 }
 
 int main(int argc, char *argv[]){
-    if (argc < 7){
+    if (argc < 8){
         std::cout << "You need to specify the filepath, the sample period (ms),the sample duration (min), the server ip, the server port, Filepath to the Id-File and the selected algorithm";
         return 1;
     }
@@ -44,6 +44,14 @@ int main(int argc, char *argv[]){
     auto port = std::stoi(argv[5]);
     auto deviceIdFilepath = argv[6];
     auto algorithmId = std::stoi(argv[7]);
+
+    auto sampleAllData = false;
+
+    if(argc == 9){
+        //To determine if we want nice data or monitor the system
+        //Graph is fucked up if we don't send data every time, so this is a small hack, to create nice looking graph
+        sampleAllData = static_cast<bool>(std::stoi(argv[8]));
+    }
 
     auto deviceId = getDeviceId(deviceIdFilepath);
 
@@ -65,10 +73,10 @@ int main(int argc, char *argv[]){
         usedFilter = std::make_unique<LMSFilter>(0.5, 5, 1, DeviceId, SamplePeriod, ip, port);
         break;
     case AlgorithmId::STATICFILTER:
-        usedFilter = std::make_unique<StaticFilter>(0.5, DeviceId, ip, port);
+        usedFilter = std::make_unique<StaticFilter>(0.5, DeviceId, ip, port, sampleAllData);
         break;
     case AlgorithmId::STATICMEANFILTER:
-        usedFilter = std::make_unique<StaticMeanFilter>(0.5, 5, DeviceId, ip, port);
+        usedFilter = std::make_unique<StaticMeanFilter>(0.5, 5, DeviceId, ip, port, sampleAllData);
         break;
     case AlgorithmId::BASELINE :
     default:
