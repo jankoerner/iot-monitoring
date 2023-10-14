@@ -44,10 +44,10 @@ def algorithm_id(algo):
         case _:
             return 1
 
-def cpp_filter_cmd(algo, interval, duration):
+def cpp_filter_cmd(algo, interval, duration, pretty):
     algoId = algorithm_id(algo)
     algoPort = algorithm_port(algo)
-    cmd = f"cd {iot_folder}/binaries/; (nohup ./cppfilter {DATA_FILE_PATH} {interval} {duration} {SERVER_IP} {algoPort} {ID_FILE_PATH} {algoId} > test.txt 2>&1 <&- &)"
+    cmd = f"cd {iot_folder}/binaries/; (nohup ./cppfilter {DATA_FILE_PATH} {interval} {duration} {SERVER_IP} {algoPort} {ID_FILE_PATH} {algoId} {pretty} > test.txt 2>&1 <&- &)"
     return cmd
 
 def startup(connection, cmd):
@@ -87,7 +87,7 @@ def execute(connection,args):
         cmd = ""
         match args.algorithm:
             case "baseline" | "static" | "static-mean" | "lms":
-                cmd = cpp_filter_cmd(args.algorithm, args.freq, args.runtime)
+                cmd = cpp_filter_cmd(args.algorithm, args.freq, args.runtime, 1 if args.pretty else 0)
             case "sampling" | "pla":
                 secs = int(args.runtime) * 60
                 cmd = f"cd {iot_folder}/binaries/; (nohup ./main -A {SERVER_IP} -d {secs} -t {args.freq} &)"
@@ -115,6 +115,7 @@ def main():
                         choices=['baseline', 'static', 'static-mean', 'lms', 'sampling', 'pla', 'sip-ewma', 'sip'])
     parser.add_argument('-f', '--freq', help='Sample freq of the algorithm in ms (default: %(default)s)', default=1000)
     parser.add_argument('-r', '--runtime', help='The runtime of the algorithm in minutes (default: %(default)s)', default=5)
+    parser.add_argument('p', '--pretty', help="If pretty graphs are necessary", action="store_true")
 
 
     args = parser.parse_args()
