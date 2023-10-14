@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-    sip:
+    lms:
         container_name: lms
         build: lms
         env_file:

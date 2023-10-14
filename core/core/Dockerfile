@@ -16,6 +16,7 @@ RUN pip install -r requirements.txt
 
 EXPOSE 12000:12000
 EXPOSE 12001:12001
+EXPOSE 12004:12004
 
 #ENTRYPOINT ["tail", "-f", "/dev/null"]
 ENTRYPOINT ["/usr/local/bin/python", "/core/main.py"]

@@ -130,7 +130,7 @@ def handle_data(rawData):
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 
-print(f"Started server on: {HOST}:{PORT}")
+print(f"Started LMS server on: {HOST}:{PORT}")
 
 s.listen()
 

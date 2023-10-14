@@ -19,7 +19,7 @@ import datetime
 
 import mysql.connector
 
-start_time = time.time_ns() // 1e6
+start_time = time.time_ns() // 1e3
 
 device_start_time_delta = [-1] * NUM_DEVICES * NUM_ALGS
 
@@ -44,7 +44,7 @@ def threaded(c):
     while True:
         try: 
             raw = c.recv(1024)
-            #print(f"Received: {raw}")
+            print(f"Received: {raw}")
         except:
             print("Could not receive raw data, connection close")
             break
@@ -150,7 +150,7 @@ def threaded(c):
 def Main():
 
     conn, cursor = restartMysql();
-    for device in range(NUM_DEVICES):
+    for device in range(1, NUM_DEVICES+1):
         for alg in range(1, 9): # fuckit
             # create table if none exists
             cursor.execute(('''CREATE TABLE IF NOT EXISTS `%s` (
