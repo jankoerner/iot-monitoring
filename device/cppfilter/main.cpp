@@ -57,7 +57,6 @@ int main(int argc, char *argv[]){
     std::cout << "Device Id: " << DeviceId << "\n"; 
 
     File = std::ifstream{DataFilepath};    
-    auto totalIterations = SampleDuration * ((SamplePeriod / 1000) * 60);
 
     std::unique_ptr<Filter> usedFilter;
 
