@@ -4,6 +4,7 @@ import paramiko
 import time
 from scp import SCPClient
 from utils import *
+import concurrent.futures
 
 SERVER_IP = "200.150.100.10"
 CORE_PORT = 12000
@@ -46,34 +47,59 @@ def algorithm_id(algo):
 def cpp_filter_cmd(algo, interval, duration):
     algoId = algorithm_id(algo)
     algoPort = algorithm_port(algo)
-    cmd = f"cd {iot_folder}/binaries/; (nohup ./cppfilter {DATA_FILE_PATH} {interval} {duration} {SERVER_IP} {algoPort} {ID_FILE_PATH} {algoId} &)"
+    cmd = f"cd {iot_folder}/binaries/; (nohup ./cppfilter {DATA_FILE_PATH} {interval} {duration} {SERVER_IP} {algoPort} {ID_FILE_PATH} {algoId} > test.txt 2>&1 <&- &)"
     return cmd
 
-def startup(connections, cmd):
-    for connection in connections.items():
-        ip, user, pw = extract_conn_infos(connection)
-        print(f"Start algorithm on: {ip}")
-        client = create_ssh(ip,user,pw)      
-        client.exec_command(cmd)
-        client.close()
+def startup(connection, cmd):
+    ip, user, pw = extract_conn_infos(connection)
+    print(f"Start algorithm on: {ip}")
+    client = create_ssh(ip,user,pw)      
+    client.exec_command(cmd)
+    client.close()
 
-def start_monitoring(connections, interval, total_ticks, algo):
-    for connection in connections.items():
-        ip, user, pw = extract_conn_infos(connection)
+def start_monitoring(connection, interval, total_ticks, algo):
+    ip, user, pw = extract_conn_infos(connection)
 
-        print(f"Start monitoring on: {ip}")             
-        
-        client = create_ssh(ip,user,pw)      
-        sftp = client.open_sftp()
-        device_id = sftp.file("/home/pi/iot-monitoring/data/id.txt",'r').readline().rstrip()
-        filename = f"{device_id}_{algo}.stats"
-
-        client.exec_command(f"mkdir -p {iot_folder}/monitoring/results")
-        cmd = f"cd {iot_folder}/monitoring/results;(sar -u -n DEV -r -d -F -o {filename} {interval} {total_ticks} > /dev/null 2>&1 &)"
-        
-        client.exec_command(cmd)
-        client.close()
+    print(f"Start monitoring on: {ip}")             
     
+    client = create_ssh(ip,user,pw)      
+    sftp = client.open_sftp()
+    device_id = sftp.file("/home/pi/iot-monitoring/data/id.txt",'r').readline().rstrip()
+    sftp.close()
+    filename = f"{device_id}_{algo}.stats"
+
+    client.exec_command(f"mkdir -p {iot_folder}/monitoring/results")
+    cmd = f"cd {iot_folder}/monitoring/results;(sar -u -n DEV -r -d -F -o {filename} {interval} {total_ticks} > /dev/null 2>&1 &)"
+    
+    client.exec_command(cmd)
+    client.close()
+
+
+def execute(connection,args):
+    try:
+        if args.monitoring:
+            interval = int(float(args.interval)) if float(args.interval) > 1 else 1
+            ticks_per_minute = 60 // float(interval) 
+            total_ticks = ticks_per_minute * float(args.duration)       
+            start_monitoring(connection, interval, int(total_ticks), args.algorithm)  
+            time.sleep(5)
+
+        cmd = ""
+        match args.algorithm:
+            case "baseline" | "static" | "static-mean" | "lms":
+                cmd = cpp_filter_cmd(args.algorithm, args.freq, args.runtime)
+            case "sampling" | "pla":
+                secs = int(args.runtime) * 60
+                cmd = f"cd {iot_folder}/binaries/; (nohup ./main -A {SERVER_IP} -d {secs} -t {args.freq} &)"
+            case "sip-ewma" | "sip" :
+                cmd = ""
+            case _ :
+                cmd = cpp_filter_cmd("baseline",args.freq, args.runtime)
+        
+        startup(connection, cmd)
+    except Exception as e:
+        raise Exception(f"Startup on {connection[0]} failed with {e}!")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Script to startup the algorithms and the monitoring")
@@ -90,29 +116,20 @@ def main():
     parser.add_argument('-f', '--freq', help='Sample freq of the algorithm in ms (default: %(default)s)', default=1000)
     parser.add_argument('-r', '--runtime', help='The runtime of the algorithm in minutes (default: %(default)s)', default=5)
 
-    args = parser.parse_args()
-    
-    connections = read_connection_file(args.connections)
-    
-    if args.monitoring:
-        interval = int(float(args.interval)) if float(args.interval) > 1 else 1
-        ticks_per_minute = 60 // float(interval) 
-        total_ticks = ticks_per_minute * float(args.duration)       
-        start_monitoring(connections, interval, int(total_ticks), args.algorithm)  
-        time.sleep(5)
 
-    cmd = ""
-    match args.algorithm:
-        case "baseline" | "static" | "static-mean" | "lms":
-            cmd = cpp_filter_cmd(args.algorithm, args.freq, args.runtime)
-        case "sampling" | "pla":
-            cmd = ""
-        case "sip-ewma" | "sip" :
-            cmd = ""
-        case _ :
-            cmd = cpp_filter_cmd("baseline",args.freq, args.runtime)
-    
-    startup(connections, cmd)
+    args = parser.parse_args()
+    connections = read_connection_file(args.connections)
+
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) 
+    futures = [executor.submit(execute,connection,args) for connection in connections.items()]
+
+    done, not_done = concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
+
+    for future in done:
+        if future.exception():
+            print(future.exception())
+   
+    executor.shutdown()
 
 if __name__ == "__main__":
     main()
