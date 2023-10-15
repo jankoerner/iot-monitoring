@@ -1,31 +1,33 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
+#include <stdio.h>
 #include <math.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <time.h>
 
 #include "main.h"
 
-#define PATH_TO_DATA "../host/datasets/cpu-splitted/part_22.csv"
-
-#define FREQUENCY 12
-
-#define ERROR_THRESHOLD 2
-
 #define ROW_BUFFER_SIZE 100
 
-#define SLIDING_WINDOW_SIZE 20
+//#define ID_FILE "/home/pi/iot-monitoring/data/id.txt"
+#define ID_FILE "id.txt"
 
-#define CSV_FILE_SIZE 36000
+char* PATH_TO_DATA;          
+char* address;                        // 127.0.0.1
+char* PORT;                           // 12001
+char* FREQUENCY_str;                  // 10
+char* DURATION_str;                   // 60 seconds
+char* SLIDING_WINDOW_SIZE_str;        // 20 samples
+char* ERROR_THRESHOLD_str;            // 2 epsilon
+char* EMWA_ALPHA_str;                 // 0.25
 
-#define ADDRESS '127.0.0.1'
-
-#define PORT 12001
-
-#define EMWA_ALPHA 0.25
+int FREQUENCY;
+int DURATION;
+int SLIDING_WINDOW_SIZE;
+int ERROR_THRESHOLD;
+double EMWA_ALPHA;
 
 //Linear values:
 long double m = 0.0;
@@ -48,17 +50,19 @@ double local_sink = 0.0;
 
 struct timeval tv;
 
-double iteration_time = 1.0 / FREQUENCY;
+double iteration_time;
 
 char buffer[2048];
-char buffer_ref[2048];
-char buffer_filtered[2048];
 
-char* address = "127.0.0.1";
+char device_id[10];
+
+char* address;
 
 char* message;
-char* message_ref;
-char* message_filtered;
+
+char* data;
+FILE *fp;
+FILE *fp_id;
 
 void sink(double prediction, int timeStamp) {
     local_sink = prediction;
@@ -96,38 +100,7 @@ int sendMessage(char* address, char* message){
   return 0;
 }
 
-int sendRef(char* address, char* message, char* message2){
-  int sockfd;
-  const struct sockaddr_in servaddr = {
-    .sin_family= AF_INET,
-    .sin_addr.s_addr= inet_addr(address),
-    .sin_port= htons(12000)
-  };
-
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sockfd == -1){
-    printf("socket creation failed...\n");
-    exit(0);
-  }
-  else{
-    // printf("Socket successfully created..\n");
-  }
-
-  // connect the client socket to server socket
-  if (connect(sockfd,(const struct sockaddr_in*)&servaddr, sizeof(servaddr)) != 0) {
-    printf("connection with the server failed...\n");
-    exit(0);
-  }
-  else
-    // printf("Messsage to send: %s\n", message);
-    send(sockfd, message, strlen(message), 0);
-    send(sockfd, message2, strlen(message2), 0);
-
-  close(sockfd);
-  return 0;
-}
-
-void calculateLinearApproximation(double times[], double values[], int length) {
+void calculateLinearApproximation(unsigned long times[], double values[], int length) {
     double sum_x = 0.0;
     double sum_y = 0.0; 
     double sum_xy = 0.0;
@@ -161,11 +134,25 @@ void calculateLinearApproximation(double times[], double values[], int length) {
 
 int main(int argc, char** argv) {
 
-    char* data;
+    PATH_TO_DATA         = argv[1];          
+    address              = argv[2];               // 127.0.0.1
+    PORT                 = argv[3];               // 12001
+    FREQUENCY_str            = argv[4];               // 10
+    DURATION_str             = argv[5];               // 60 seconds
+    SLIDING_WINDOW_SIZE_str  = argv[6];               // 20 samples
+    ERROR_THRESHOLD_str      = argv[7];               // 2 epsilon
+    EMWA_ALPHA_str           = argv[8];               // 0.25
 
-    FILE *fp;
+    FREQUENCY           = atoi(FREQUENCY_str);
+    DURATION            = atoi(DURATION_str);
+    SLIDING_WINDOW_SIZE = atoi(SLIDING_WINDOW_SIZE_str);
+    ERROR_THRESHOLD     = atoi(ERROR_THRESHOLD_str);
 
-    char row[ROW_BUFFER_SIZE];
+    EMWA_ALPHA       =  atof(EMWA_ALPHA_str);
+
+    iteration_time = 1.0 / FREQUENCY;
+
+    char* row = (char*)malloc(ROW_BUFFER_SIZE * sizeof(char));
 
     fp = fopen(PATH_TO_DATA, "r");
 
@@ -173,35 +160,71 @@ int main(int argc, char** argv) {
 
     int firstRow = 0;
 
+    // get device_id from file named id.txt
+    /*
+    fp_id = fopen(ID_FILE, "r");
+    fgets(device_id, 10, fp_id);
+    fclose(fp_id);  
+    */
+
+    //THIS IS DUMB. If EMWA_ALPHA is 1, then the alg_id is 8 else 7 
+    char *FILTER_ENABLE = "1";
+
+    if (strcmp(EMWA_ALPHA_str, "1") == 0 || strcmp(EMWA_ALPHA_str, "1.0") == 0) {
+        *FILTER_ENABLE = "0";
+    }
+
     //send(sockfd, data, 100, 0);
     double values[SLIDING_WINDOW_SIZE];
-    double timestamps[SLIDING_WINDOW_SIZE];
-    
-    while(feof(fp) != 1 && count < CSV_FILE_SIZE) {
+    unsigned long timestamps[SLIDING_WINDOW_SIZE];
+
+    // poihter to first element in values
+    double* values_ptr      = &values[0];
+    unsigned long* timestamps_ptr  = &timestamps[0];
+
+    gettimeofday(&tv, NULL);
+    unsigned long startTime = tv.tv_usec;
+
+    while(feof(fp) != 1 && DURATION*100000 > startTime - tv.tv_usec) {
+        printf("Enter loop\n");
         //Retrieve next data set: (Query Sensors)
         fgets(row, ROW_BUFFER_SIZE, fp);
+        printf("Row: %s ---------------------------------------------", row);
+
+        printf("still alive\n");
 
         //First SLIDING_WINDOW_SIZE data points are init, will be sent to sink too
         if(count < SLIDING_WINDOW_SIZE) {
             //printf("Data before atof (Timestamp) %s\n", data);
-            timestamps[count] = 0.0;
+            printf("VAD HÄNDER---------------------");
+            timestamps[count] = 0;
             //printf("Timestamp: %f\n", timestamps[count]);
+            printf("PEEKABOO-----------");
             data = strtok(row, "\n");
+            printf("data:----- %s\n", data);
+            if (data == NULL) {
+                // Handle the case where strtok returns NULL
+                continue; // Skip the rest of this iteration
+            }
             raw_value = atof(data);
             emwa_m = EMWA_ALPHA * raw_value + (1 - EMWA_ALPHA) * emwa_m;
             values[count] = emwa_m;
             count++;
+            gettimeofday(&tv, NULL);
             continue;
         }
+        //Ignore measuring in beginning as that would highly skew time as first ones are not sent (Look above)
 
         //Estimate new state (client side)
         //printf("\nRow: %s", row);
-        double current_timestamp = 0.0;
+        unsigned long current_timestamp = 0;
         double current_value = 0.0;
 
         // we want the current timestamp, not the one the csv, current_timestamp = atof(row);
         gettimeofday(&tv, NULL);
-        current_timestamp = (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
+        current_timestamp = tv.tv_usec;
+
+        //clock_gettime(CLOCK_REALTIME, start);
 
         //printf("Second Row: %s\n", row);
         data = strtok(row, "\n");
@@ -226,15 +249,18 @@ int main(int argc, char** argv) {
         }
         */
 
-        //Update window (Quite messy but it works)
-        for(int i = 0; i < SLIDING_WINDOW_SIZE-2; i++) {
-            timestamps[i] = timestamps[i+1];
-            values[i] = values[i+1];
+        // inc pointer, if pointer is at SLIDING_WINDOW_SIZE, reset to 0
+        if(values_ptr == &values[SLIDING_WINDOW_SIZE-1]) {
+            values_ptr      = &values[0];
+            timestamps_ptr  = &timestamps_ptr[0];
+        } else {
+            values_ptr      += sizeof(double);
+            timestamps_ptr  += sizeof(unsigned long);
         }
 
-        //printf("HELLO correct value %f\n", current_value);
-        timestamps[SLIDING_WINDOW_SIZE-1] = current_timestamp;
-        values[SLIDING_WINDOW_SIZE-1] = current_value;
+        // write the value in current_timestamp to the address of timestamp_ptr
+        *timestamps_ptr = current_timestamp;
+        *values_ptr = current_value;
 
         calculateLinearApproximation(timestamps, values, SLIDING_WINDOW_SIZE);
             
@@ -257,12 +283,12 @@ int main(int argc, char** argv) {
             //printf("Error: %f\n", fabsl(predicted_sink_value - predicted_client_value));
             //printf("Client predict: %f\n", predicted_client_value);
             //printf("Sink   predict: %f\n", predicted_sink_value);
-            printf("Count: %d\n", count);
+            //printf("Count: %d\n", count);
 
             // printf("Sending new K=%f and M=%f\n", client_predict_k, client_predict_m);
             // printf("\n");
 
-            sprintf(buffer, "0,%f,%.15Lf,%.15Lf", current_timestamp, client_predict_k, client_predict_m);
+            sprintf(buffer, "%s,%lu,%.15Lf,%.15Lf,%s", device_id, current_timestamp, client_predict_k, client_predict_m, FILTER_ENABLE);
 
             message = buffer;
 
@@ -274,56 +300,18 @@ int main(int argc, char** argv) {
 
         }
 
-        sprintf(buffer_ref, "1,%f,%.15f\n", current_timestamp, raw_value);
-        sprintf(buffer_filtered, "2,%f,%.15f", current_timestamp, current_value);
-        message_ref = buffer_ref;
-        message_filtered = buffer_filtered;
-        sendRef(address, message_ref, message_filtered);
-
         usleep(iteration_time * 1000000);  // Sleep in microsecond
         count++; 
-    }
+        gettimeofday(&tv, NULL);
 
-    /*
-    //Initial 100 data points (values)
-    while(feof(fp1) != 1 && count < 100) {
-      fgets(row, 10, fp1);
-      data = strtok(row, ",");
-      values[count] = atof(data);
-      count++;
     }
-    count = 0;
-
-    //Initial 100 data points (timestamps)
-    while(feof(fp2) != 1 && count < 100) {
-      fgets(row, 10, fp2);
-      data = strtok(row, ",");
-      timestamps[count] = atof(data);
-      count++;
-    }
-    */
+    free(row);
+    fclose(fp);
   
     count = 0;
 
-    printf("m final: %.32Lf\n ", *m_ptr);
-    printf("k final: %.32Lf\n ", *k_ptr);
-
     //Here begins the genral code: 
     //Estimate new state
-
-
-
-    /*
-    while(feof(fp) != 1 && count < 1000) {
-      fgets(row, 10, fp);
-      data = strtok(row, ",");
-      
-
-
-
-      count++;
-    }
-    */
 
     printf("End of program...\n");
     exit(0);

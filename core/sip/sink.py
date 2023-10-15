@@ -15,6 +15,8 @@ PORT = int(os.environ['SINK_PORT'])  # Port to listen on
 CORE_PORT = int(os.environ['CORE_PORT'])  # Core port to connect to
 
 frq = 1/FREQUENCY
+
+alg_id = 7
 class SIP:
     def __init__(self, k, m):
         self.k = k
@@ -63,17 +65,18 @@ def socket_thread(c):
                 print("Invalid data format, continue")
                 continue
 
-            if(len(args) != 4):
+            if(len(args) != 5):
                 print("Invalid data format, continue")
                 continue
  
-            #(INT, TIME, FLOAT, FLOAT)
+            #(INT, TIME, FLOAT, FLOAT, BOOL)
 
             # Check devices
             device_s  = args[0]
             time_s  = args[1]
             k_s = args[2]
             m_s = args[3]
+            filter_s = args[4]
 
             if (not device_s.isdigit()):
                 print("Invalid device format, continue")
@@ -94,6 +97,15 @@ def socket_thread(c):
             if (not m_s.replace('.', '', 1).lstrip('-').isdigit() or m_s.count('-') > 1 or m_s.count('.') > 1 ): 
                 print("Invalid data format, continue")
                 continue
+
+            if (filter_s != "0" and filter_s != "1"):
+                print("Invalid filter format, continue")
+                continue
+
+            if (filter_s == "1"):
+                alg_id = 8
+            else:
+                alg_id = 7
 
             # check if arg0 is a valid device
             try:
@@ -130,7 +142,7 @@ def sample_thread():
 
             if prediction != 0: # cheat
                 print(f"Sampled: {prediction:.12f} @ {t} from device {i}")
-                s.sendall(f"{i},7,{t},{prediction:.12f}\n".encode('utf-8'))
+                s.sendall(f"{i},{alg_id},{t},{prediction:.12f}\n".encode('utf-8'))
 
         time.sleep(frq)
 

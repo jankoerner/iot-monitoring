@@ -23,6 +23,8 @@ start_time = time.time_ns() // 1e3
 
 device_start_time_delta = [-1] * NUM_DEVICES * NUM_ALGS
 
+message_frequency = [0] * NUM_DEVICES * NUM_ALGS
+
 def restartMysql():
     conn = mysql.connector.connect(
         host="mysql",
@@ -36,7 +38,7 @@ def restartMysql():
 def table_lookup(device, alg):
     return "d_" + str(device) + "_" + str(alg)
 
-insert = '''INSERT INTO `%s` (`timestamp`, `value`, `deltatime`) VALUES ('%s', %s, %s);'''
+insert = '''INSERT INTO `%s` (`timestamp`, `value`, `deltatime`, `message_frequency`) VALUES ('%s', %s, %s, %s);'''
 
 # thread function
 def threaded(c):
@@ -113,22 +115,29 @@ def threaded(c):
 
             key = device_id * NUM_ALGS + alg_id
 
+            start_delta = unixtime - start_time
+
             # fuckit, this will solve time whitout needing changes on the devices
             if (device_start_time_delta[key] == -1):
-                device_start_time_delta[key] = unixtime - start_time
-                delta = unixtime - start_time
+                device_start_time_delta[key] = start_delta
+                delta = start_delta
                 unixtime = start_time
             else:
                 delta = device_start_time_delta[key]
                 unixtime = unixtime - delta
 
-
-
+            current_message_frequency = "NULL"
+            current_number_of_messages = message_frequency[key]
+            # skip on first 10 messages, cuz easier to manage view in Grafana
+            if (current_number_of_messages >= 10):
+                current_message_frequency = current_number_of_messages + 1 / start_delta
+                message_frequency[key] = current_number_of_messages + 1
+                
             timestamp = datetime.datetime.fromtimestamp(unixtime / 1e6).strftime('%Y-%m-%d %H:%M:%S.%f')
             val = f"{float(value_s):.12f}"
 
             
-            stmnt = (insert % (table, timestamp, val, delta))
+            stmnt = (insert % (table, timestamp, val, delta, current_message_frequency))
 
             try:
                 cursor.execute(stmnt)
@@ -158,6 +167,7 @@ def Main():
                 `timestamp` DATETIME(6) NOT NULL,
                 `value` double NOT NULL,
                 `deltatime` double NOT NULL,
+                `message_frequency` double NULL,
                 PRIMARY KEY (`id`, `timestamp`),
                 UNIQUE KEY `timestamp` (`timestamp`)
             );''' % table_lookup(device, alg)))
