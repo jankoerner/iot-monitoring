@@ -32,11 +32,15 @@ int main(int argc, char** argv) {
   if(argc > 1)
     parseArgs(argc, argv, args);
 
-  FILE* idpath = fopen(args->idpath, "r");
+  FILE* idpath;
+  idpath = fopen(args->idpath, "r");
+  if (idpath == NULL)
+    printf("test1\n");
   char* idline = NULL;
   size_t idlen = 0;
-  if(!getline(&idline, &idlen, idpath))
+  if(!getline(&idline, &idlen, idpath)){
     id = atoi(idline);
+  }
   fclose(idpath);
 
 
@@ -54,7 +58,7 @@ int main(int argc, char** argv) {
 
   float* out = malloc(sizeof(float));
   char* end;
-  char* message = malloc(sizeof(char) * 100);
+  char* message;
   __time_t curr_us, last_ms;
   read = getline(&line, &len, fp);
   clock_gettime(CLOCK_REALTIME, start);
@@ -66,12 +70,13 @@ int main(int argc, char** argv) {
 
       double d = strtod(line, &end);
       if (algs[args->algorithm](d, out, args)){
-        message = "";
+        message = malloc(sizeof(char) * 100);
         createMessage(id, args->algorithm, curr_us, out, message);
         printf("%s", message);
 #if CONNECT_SERVER
         sendMessage(args->address, line);
 #endif
+        free(message);
       }
 
 
