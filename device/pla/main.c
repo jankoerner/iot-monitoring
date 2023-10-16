@@ -54,7 +54,8 @@ int main(int argc, char** argv) {
   char* m1;
   char* m2;
   __time_t curr_us, last_ms = -1;
-  read = getline(&line, &len, fp);
+  for (int i = 0; i < 5; i++)
+    read = getline(&line, &len, fp);
   clock_gettime(CLOCK_REALTIME, start);
   while (read != -1 && args->duration > curr->tv_sec - start->tv_sec){
     clock_gettime(CLOCK_REALTIME, curr);
@@ -78,11 +79,12 @@ int main(int argc, char** argv) {
       }
 
 
-      read = getline(&line, &len, fp);
+      for (int i = 0; i < 5; i++)
+        read = getline(&line, &len, fp);
       last_ms = curr_us/1000;
     }
     else{
-      usleep(100000); // 10ms
+      usleep(1000); // 1ms
     }
   }
 
