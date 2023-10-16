@@ -115,23 +115,25 @@ def threaded(c):
 
             key = device_id * NUM_ALGS + alg_id
 
+            current_time = int(time.time() * 1_000_000)
+            delta = (current_time - unixtime) / 1000 #Go from micro to milliseconds
+
             start_delta = unixtime - start_time
 
             # fuckit, this will solve time whitout needing changes on the devices
             if (device_start_time_delta[key] == -1):
                 device_start_time_delta[key] = start_delta
-                delta = start_delta
                 unixtime = start_time
             else:
-                delta = device_start_time_delta[key]
-                unixtime = unixtime - delta
+                d = device_start_time_delta[key]
+                unixtime = unixtime - d
 
             current_message_frequency = "NULL"
-            current_number_of_messages = message_frequency[key]
+            current_number_of_messages = message_frequency[key] + 1
             # skip on first 10 messages, cuz easier to manage view in Grafana
             if (current_number_of_messages >= 10):
-                current_message_frequency = current_number_of_messages + 1 / start_delta
-                message_frequency[key] = current_number_of_messages + 1
+                current_message_frequency = current_number_of_messages / start_delta
+                message_frequency[key] = current_number_of_messages
                 
             timestamp = datetime.datetime.fromtimestamp(unixtime / 1e6).strftime('%Y-%m-%d %H:%M:%S.%f')
             val = f"{float(value_s):.12f}"
