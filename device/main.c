@@ -11,8 +11,6 @@
 #include "main.h"
 #include "adaptive_sampling.h"
 
-#define CONNECT_SERVER 0
-
 typedef int (*alg)(float, float*, struct args*);
 
 // Server
@@ -49,7 +47,6 @@ int main(int argc, char** argv) {
   size_t len = 0;
   ssize_t read;
   struct timespec* start = malloc(sizeof(struct timespec));
-  struct timespec* last_poll = malloc(sizeof(struct timespec));
   struct timespec* curr = malloc(sizeof(struct timespec));
 
   fp = fopen(args->filename, "r");
@@ -59,33 +56,35 @@ int main(int argc, char** argv) {
   float* out = malloc(sizeof(float));
   char* end;
   char* message;
-  __time_t curr_us, last_ms;
+  __time_t curr_us, last_poll = -1, last_read = -1;
   read = getline(&line, &len, fp);
   clock_gettime(CLOCK_REALTIME, start);
   while (read != -1 && args->duration > curr->tv_sec - start->tv_sec){
     clock_gettime(CLOCK_REALTIME, curr);
     curr_us = (curr->tv_sec * 1000000) + (curr->tv_nsec / 1000);
 
-    if(last_poll == NULL || ((curr_us/1000) - last_ms) > args->poll_rate){
+    if(last_read == -1 || ((curr_us/1000) - last_read) > args->poll_rate / 5){
+      if(last_poll == -1 || ((curr_us/1000) - last_poll) > args->poll_rate){
 
-      double d = strtod(line, &end);
-      if (algs[args->algorithm](d, out, args)){
-        message = malloc(sizeof(char) * 100);
-        createMessage(id, args->algorithm, curr_us, out, message);
-        printf("%s", message);
-#if CONNECT_SERVER
-        sendMessage(args->address, line);
+        double d = strtod(line, &end);
+        if (algs[args->algorithm](d, out, args)){
+          message = malloc(sizeof(char) * 100);
+          createMessage(id, args->algorithm, curr_us, out, message);
+          printf("%s", message);
+#ifdef CONNECT_SERVER
+          sendMessage(args->address, line);
 #endif
-        free(message);
+          free(message);
+        }
+        last_poll = curr_us/1000;
       }
 
 
       read = getline(&line, &len, fp);
-      clock_gettime(CLOCK_REALTIME, last_poll);
-      last_ms = (last_poll->tv_sec * 1000) + (last_poll->tv_nsec / 1000000);
+      last_read = curr_us/1000;
     }
     else{
-      usleep(100000); // 10ms
+      usleep(1000); // 1ms
     }
   }
 

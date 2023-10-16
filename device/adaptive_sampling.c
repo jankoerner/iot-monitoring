@@ -7,12 +7,15 @@
 
 #include "adaptive_sampling.h"
 
-#define SAMPLE_RATE_DELTA 100
 #define SAMPLE_DELTA_INC 1.01
 #define SAMPLE_DELTA_DEC 0.99
 
+int sample_rate_delta = -1;
 float lastSample = 0.0;
 int adaptiveSampling(float in, float* out, struct args* args){
+
+  if (sample_rate_delta == -1)
+    sample_rate_delta = args->poll_rate/5;
 
   if (lastSample == 0.0){
     lastSample = in;
@@ -25,12 +28,12 @@ int adaptiveSampling(float in, float* out, struct args* args){
     lastSample = in;
     *out = in;
 
-    if(args->poll_rate > SAMPLE_RATE_DELTA)
-      args->poll_rate -= SAMPLE_RATE_DELTA;
+    if(args->poll_rate > sample_rate_delta)
+      args->poll_rate -= sample_rate_delta;
     
     return 1;
   }
 
-  args->poll_rate += SAMPLE_RATE_DELTA;
+  args->poll_rate += sample_rate_delta;
   return 0;
 }

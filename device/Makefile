@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -pedantic -Wincompatible-pointer-types -Wno-deprecated-declarations -g
+CFLAGS = -Wall -pedantic -Wincompatible-pointer-types -Wno-deprecated-declarations -g -D=CONNECT_SERVER
 BDIR = build
 
 all: main.o adaptive.o
