@@ -88,9 +88,12 @@ def execute(connection,args):
         match args.algorithm:
             case "baseline" | "static" | "static-mean" | "lms":
                 cmd = cpp_filter_cmd(args.algorithm, args.freq, args.runtime, 1 if args.pretty else 0)
-            case "sampling" | "pla":
+            case "sampling":
                 secs = int(args.runtime) * 60
                 cmd = f"cd {iot_folder}/binaries/; (nohup ./main -A {SERVER_IP} -d {secs} -t {args.freq} &)"
+            case "pla":
+                secs = int(args.runtime) * 60
+                cmd = f"cd {iot_folder}/binaries/; (nohup ./pla -A {SERVER_IP} -d {secs} -t {args.freq} &)"
             case "sip-ewma" | "sip" :
                 cmd = ""
             case _ :
@@ -115,7 +118,7 @@ def main():
                         choices=['baseline', 'static', 'static-mean', 'lms', 'sampling', 'pla', 'sip-ewma', 'sip'])
     parser.add_argument('-f', '--freq', help='Sample freq of the algorithm in ms (default: %(default)s)', default=1000)
     parser.add_argument('-r', '--runtime', help='The runtime of the algorithm in minutes (default: %(default)s)', default=5)
-    parser.add_argument('p', '--pretty', help="If pretty graphs are necessary", action="store_true")
+    parser.add_argument('-p', '--pretty', help="If pretty graphs are necessary", action="store_true")
 
 
     args = parser.parse_args()
