@@ -94,8 +94,15 @@ def execute(connection,args):
             case "pla":
                 secs = int(args.runtime) * 60
                 cmd = f"cd {iot_folder}/binaries/; (nohup ./pla -A {SERVER_IP} -d {secs} -t {args.freq} > /dev/null 2>&1 &)"
-            case "sip-ewma" | "sip" :
-                cmd = ""
+            case "sip" :
+                frequency = 1000 // args.freq
+                secs = int(args.runtime) * 60
+                cmd = f"cd {iot_folder}/binaries/; (nohup ./sip {DATA_FILE_PATH} {SERVER_IP} {SIP_PORT} {frequency} {secs} 20 2 1 > /dev/null 2>&1 &)"
+            case "sip-ewma":
+                frequency = 1000 // args.freq
+                secs = int(args.runtime) * 60
+                cmd = f"cd {iot_folder}/binaries/; (nohup ./sip {DATA_FILE_PATH} {SERVER_IP} {SIP_PORT} {frequency} {secs} 20 2 0.25 > /dev/null 2>&1 &)"
+                print(cmd)
             case _ :
                 cmd = cpp_filter_cmd("baseline",args.freq, args.runtime)
         
