@@ -90,10 +90,10 @@ def execute(connection,args):
                 cmd = cpp_filter_cmd(args.algorithm, args.freq, args.runtime, 1 if args.pretty else 0)
             case "sampling":
                 secs = int(args.runtime) * 60
-                cmd = f"cd {iot_folder}/binaries/; (nohup ./main -A {SERVER_IP} -d {secs} -t {args.freq} &)"
+                cmd = f"cd {iot_folder}/binaries/; (nohup ./main -A {SERVER_IP} -d {secs} -t {args.freq} > /dev/null 2>&1 &)"
             case "pla":
                 secs = int(args.runtime) * 60
-                cmd = f"cd {iot_folder}/binaries/; (nohup ./pla -A {SERVER_IP} -d {secs} -t {args.freq} &)"
+                cmd = f"cd {iot_folder}/binaries/; (nohup ./pla -A {SERVER_IP} -d {secs} -t {args.freq} > /dev/null 2>&1 &)"
             case "sip-ewma" | "sip" :
                 cmd = ""
             case _ :
