@@ -33,10 +33,10 @@ int main(int argc, char** argv) {
   FILE* idpath;
   idpath = fopen(args->idpath, "r");
   if (idpath == NULL)
-    printf("test1\n");
+    return -1;
   char* idline = NULL;
   size_t idlen = 0;
-  if(!getline(&idline, &idlen, idpath)){
+  if(getline(&idline, &idlen, idpath) != -1){
     id = atoi(idline);
   }
   fclose(idpath);
@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
           createMessage(id, args->algorithm, curr_us, out, message);
           printf("%s", message);
 #ifdef CONNECT_SERVER
-          sendMessage(args->address, line);
+          sendMessage(args->address, message);
 #endif
           free(message);
         }
@@ -149,12 +149,13 @@ int sendMessage(char* address, char* message){
   }
   else
     printf("connected to the server..\n");
+    send(sockfd,message,strlen(message),0);
 
   close(sockfd);
   return 0;
 }
 
 void createMessage(int id, int algorithm, __time_t time, float* value, char* message){
-  sprintf(message, "%d,%d,%ld,%f\n", id, algorithm, time, *value);
+  sprintf(message, "%d,%d,%ld,%f\n", id, algorithm+5, time, *value);
 }
 
