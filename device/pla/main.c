@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <time.h>
+#include <sys/time.h>
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -71,8 +71,7 @@ int main(int argc, char** argv) {
         createMessage(id, 6, tv_out[1].time, tv_out[1].value, m2);
         printf("\no: %so: %s\n", m1, m2);
 #ifdef CONNECT_SERVER
-        sendMessage(args->address, m1);
-        sendMessage(args->address, m2);
+        sendMessage(args->address, m1, m2);
 #endif
         free(m1);
         free(m2);
@@ -120,7 +119,7 @@ int parseArgs(int argc, char** argv, struct args* args){
   return 0;
 }
 
-int sendMessage(char* address, char* message){
+int sendMessage(char* address, char* m1, char* m2){
   int sockfd;
   const struct sockaddr_in servaddr = {
     .sin_family= AF_INET,
@@ -145,7 +144,8 @@ int sendMessage(char* address, char* message){
   }
   else
     printf("connected to the server..\n");
-  send(sockfd, message, strlen(message), 0);
+  send(sockfd, m1, strlen(m1), 0);
+  send(sockfd, m2, strlen(m2), 0);
 
   close(sockfd);
   return 0;

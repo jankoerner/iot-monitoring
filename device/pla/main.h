@@ -16,7 +16,7 @@ struct time_val {
 };
 
 int parseArgs(int argc, char** argv, struct args* args);
-int sendMessage(char* address, char* message);
+int sendMessage(char* address, char* m1, char* m2);
 void createMessage(int id, int algorithm, __time_t time, float value, char* message);
 
 // PLA stuff
