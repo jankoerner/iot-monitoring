@@ -13,12 +13,11 @@
 
 #define ROW_BUFFER_SIZE 100
 
-//#define ID_FILE "/home/pi/iot-monitoring/data/id.txt"
-#define ID_FILE "id.txt"
+#define ID_FILE "/home/pi/iot-monitoring/data/id.txt"
 
 char* PATH_TO_DATA;          
 char* address;                        // 127.0.0.1
-char* PORT;                           // 12001
+int PORT;                             // 12001
 char* FREQUENCY_str;                  // 10
 char* DURATION_str;                   // 60 seconds
 char* SLIDING_WINDOW_SIZE_str;        // 20 samples
@@ -96,7 +95,7 @@ int sendMessage(char* address, char* message){
     exit(0);
   }
   else
-    // printf("Messsage to send: %s\n", message);
+    printf("Messsage to send: %s\n", message);
     send(sockfd, message, strlen(message), 0);
 
   close(sockfd);
@@ -164,7 +163,7 @@ int main(int argc, char** argv) {
 
     PATH_TO_DATA         = argv[1];          
     address              = argv[2];               // 127.0.0.1
-    PORT                 = argv[3];               // 12001
+    PORT                 = atoi(argv[3]);               // 12001
     FREQUENCY_str            = argv[4];               // 10
     DURATION_str             = argv[5];               // 60 seconds
     SLIDING_WINDOW_SIZE_str  = argv[6];               // 20 samples
@@ -173,8 +172,7 @@ int main(int argc, char** argv) {
 
     FREQUENCY           = atoi(FREQUENCY_str);
     DURATION            = atoi(DURATION_str);
-    //SLIDING_WINDOW_SIZE = atoi(SLIDING_WINDOW_SIZE_str);
-    SLIDING_WINDOW_SIZE = 20;
+    SLIDING_WINDOW_SIZE = atoi(SLIDING_WINDOW_SIZE_str);
     ERROR_THRESHOLD     = atoi(ERROR_THRESHOLD_str);
 
     //printf("Window sliding %d\n", SLIDING_WINDOW_SIZE);
@@ -232,7 +230,7 @@ int main(int argc, char** argv) {
         }
 
         //printf("----------------------\n");
-        //printf("Enter loop: %d\n", count);
+        printf("Enter loop: %d\n", count);
         //Retrieve next data set: (Query Sensors)
         fgets(row, ROW_BUFFER_SIZE, fp);
 
@@ -241,7 +239,7 @@ int main(int argc, char** argv) {
 
         //First SLIDING_WINDOW_SIZE data points are init, will be sent to sink too
         if(count < SLIDING_WINDOW_SIZE) {
-            //printf("Window value inside count thing: %d\n", window_index);
+            printf("Window value inside count thing: %d\n", window_index);
 
             timestamps[window_index] = 0;
 
@@ -280,7 +278,7 @@ int main(int argc, char** argv) {
         gettimeofday(&tv, NULL);
         current_timestamp  = 1000000 * tv.tv_sec + tv.tv_usec;
 
-        //printf("Timestamp: %ld\n", current_timestamp);
+        printf("Timestamp: %ld\n", current_timestamp);
 
         //clock_gettime(CLOCK_REALTIME, start);
 
@@ -382,13 +380,13 @@ int main(int argc, char** argv) {
 
         }
 
-        //printf("seg test9\n");
+        printf("seg test9\n");
 
         usleep(iteration_time * 1000000);  // Sleep in microsecond
         count++; 
         gettimeofday(&tv, NULL);
 
-        //printf("seg test10\n");
+        printf("seg test10\n");
         // fuckit
         
         window_index += 1;
