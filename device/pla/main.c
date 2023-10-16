@@ -53,14 +53,15 @@ int main(int argc, char** argv) {
   char* end = malloc(sizeof(char));
   char* m1;
   char* m2;
-  __time_t curr_us, last_ms = -1;
+  long long curr_us, last_ms = -1;
   for (int i = 0; i < 5; i++)
     read = getline(&line, &len, fp);
   clock_gettime(CLOCK_REALTIME, start);
   while (read != -1 && args->duration > curr->tv_sec - start->tv_sec){
     clock_gettime(CLOCK_REALTIME, curr);
-    curr_us = (curr->tv_sec * 1000000) + (curr->tv_nsec / 1000);
-
+    curr_us = (curr->tv_sec * 1000000LL) + (curr->tv_nsec / 1000);
+    long long test = (curr->tv_sec * 1000000LL) + (curr->tv_nsec / 1000);
+    
     if(last_ms == -1 || ((curr_us/1000) - last_ms) > args->poll_rate){
       tv_in->value = strtod(line, &end);
       tv_in->time  = curr_us;
@@ -151,7 +152,7 @@ int sendMessage(char* address, char* m1, char* m2){
   return 0;
 }
 
-void createMessage(int id, int algorithm, __time_t time, float value, char* message){
-  sprintf(message, "%d,%d,%ld,%f\n", id, algorithm, time, value);
+void createMessage(int id, int algorithm, long long time, float value, char* message){
+  sprintf(message, "%d,%d,%lld,%f\n", id, algorithm, time, value);
 }
 

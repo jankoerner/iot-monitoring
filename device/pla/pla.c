@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <time.h>
+#include <sys/time.h>
 #include <math.h>
 
 #include <arpa/inet.h>
@@ -11,7 +11,7 @@
 
 #include "main.h"
 
-__time_t t0 = -1;
+long long t0 = -1;
 double* working_x;
 double* working_y;
 int n = 0;
@@ -52,8 +52,8 @@ int pla(struct time_val* tv_in, struct time_val* tv_out){
 
   if(error * error < .95){
     
-    tv_out[0].time = ((__time_t)(working_x[0] * 1000000) + t0);
-    tv_out[1].time = ((__time_t)(working_x[n-2] * 1000000) + t0);
+    tv_out[0].time = ((long long)(working_x[0] * 1000000) + t0);
+    tv_out[1].time = ((long long)(working_x[n-2] * 1000000) + t0);
 
     tv_out[0].value = working_x[0] * pw.slope + pw.offset;
     tv_out[1].value = working_x[n-2] * pw.slope + pw.offset;

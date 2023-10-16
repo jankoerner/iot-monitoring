@@ -12,12 +12,12 @@ struct args {
 
 struct time_val {
   float value;
-  __time_t time;
+  long long time;
 };
 
 int parseArgs(int argc, char** argv, struct args* args);
 int sendMessage(char* address, char* m1, char* m2);
-void createMessage(int id, int algorithm, __time_t time, float value, char* message);
+void createMessage(int id, int algorithm, long long time, float value, char* message);
 
 // PLA stuff
 
