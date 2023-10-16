@@ -3,7 +3,7 @@ CFLAGS = -Wall -pedantic -Wincompatible-pointer-types -Wno-deprecated-declaratio
 BDIR = build
 
 all: main.o pla.o
-	$(CC) $(CFLAGS) -lm $(BDIR)/main.o $(BDIR)/pla.o -o $(BDIR)/main
+	$(CC) $(CFLAGS) $(BDIR)/main.o $(BDIR)/pla.o -o $(BDIR)/main -lm
 
 main.o:
 	$(CC) $(CFLAGS) -c main.c -o $(BDIR)/main.o
