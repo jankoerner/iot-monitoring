@@ -18,8 +18,11 @@ namespace{
 
 float readDataPoint(){    
     std::string line;
-    std::getline(File,line);
 
+    for (size_t i = 0; i < 5; i++){
+        std::getline(File,line);
+    }
+    
     return std::stof(line);
 }
 
