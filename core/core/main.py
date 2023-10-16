@@ -21,9 +21,9 @@ import mysql.connector
 
 start_time = 1697446353658448.0 #time.time_ns() // 1e3
 
-device_start_time_delta = [-1] * NUM_DEVICES * NUM_ALGS
+device_start_time_delta = [-1] * (NUM_DEVICES + 1) * (NUM_ALGS + 1)
 
-message_frequency = [0] * NUM_DEVICES * NUM_ALGS
+message_frequency = [0] * (NUM_DEVICES + 1) * (NUM_ALGS+1)
 
 def restartMysql():
     conn = mysql.connector.connect(
