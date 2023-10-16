@@ -18,10 +18,7 @@ namespace{
 
 float readDataPoint(){    
     std::string line;
-
-    for (size_t i = 0; i < 5; i++){
-        std::getline(File,line);
-    }
+    std::getline(File,line);
     
     return std::stof(line);
 }
@@ -73,7 +70,7 @@ int main(int argc, char *argv[]){
 
     switch (algorithmId){
     case::AlgorithmId::LMSFILTER:
-        usedFilter = std::make_unique<LMSFilter>(0.5, 5, 1, DeviceId, SamplePeriod, ip, port);
+        usedFilter = std::make_unique<LMSFilter>(0.5, 10, 3, DeviceId, SamplePeriod, ip, port);
         break;
     case AlgorithmId::STATICFILTER:
         usedFilter = std::make_unique<StaticFilter>(0.5, DeviceId, ip, port, sampleAllData);
