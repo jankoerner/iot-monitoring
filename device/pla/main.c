@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
       last_ms = curr_us/1000;
     }
     else{
-      usleep(1000); // 1ms
+      usleep(1); // 1ms
     }
   }
 
