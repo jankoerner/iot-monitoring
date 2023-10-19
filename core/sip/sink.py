@@ -16,6 +16,8 @@ CORE_PORT = int(os.environ['CORE_PORT'])  # Core port to connect to
 
 frq = 1/FREQUENCY
 
+today = int(datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+
 alg_id = 7
 class SIP:
     def __init__(self, k, m):
@@ -84,7 +86,7 @@ def socket_thread(c):
             
             # check if arg1 is a unix time with at most five decumals
             try:
-                unixtime = int(time_s)
+                unixtime = int(time_s.replace(".", ""))
             except:
                 print("Invalid time format, continue")
                 continue
@@ -136,8 +138,14 @@ def sample_thread():
         for i in range(NUM_DEVICES):
             sink = sinks[i]
 
-            #time_since_start = time.time_ns() - time_start
-            t = int(time.time_ns() // 1e3)
+            mys = time.time_ns() // 1e3
+
+            current_time_seconds = mys // 1e6
+
+            global today
+            t = current_time_seconds - today
+
+
             prediction = sink.getPrediction(t)
 
             if prediction != 0: # cheat
