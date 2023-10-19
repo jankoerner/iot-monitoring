@@ -175,7 +175,6 @@ int main(int argc, char** argv) {
     size_t idlen = 0;
     if(getline(&idline, &idlen, fp_id)){
         device_id = atoi(idline);
-        device_id = 0;
     }
     printf("Device id: %d\n", device_id);
     fclose(fp_id);
