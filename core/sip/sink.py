@@ -146,13 +146,13 @@ def sample_thread():
             t = current_time_seconds - today
 
             #time_to_send is current_time_seconds in microsec as int
-            time_to_send = int(current_time_seconds * 1e6)
+            time_to_send = int(mys)
 
             prediction = sink.getPrediction(t)
 
             if prediction != 0: # cheat
                 print(f"Sampled: {prediction:.12f} @ {t} from device {i}")
-                s.sendall(f"{i},{alg_id},{current_time_seconds},{prediction:.12f}\n".encode('utf-8'))
+                s.sendall(f"{i},{alg_id},{time_to_send},{prediction:.12f}\n".encode('utf-8'))
 
         time.sleep(frq)
 
