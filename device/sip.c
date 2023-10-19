@@ -5,7 +5,6 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <time.h>
 #include <string.h>
 
 #include "main.h"
@@ -13,7 +12,7 @@
 #define ROW_BUFFER_SIZE 100
 
 //#define ID_FILE "/home/pi/iot-monitoring/data/id.txt"
-#define ID_FILE "id.txt"
+//#define ID_FILE "id.txt"
 
 char* PATH_TO_DATA;          
 char* address;                        // 127.0.0.1
@@ -23,6 +22,7 @@ char* DURATION_str;                   // 60 seconds
 char* SLIDING_WINDOW_SIZE_str;        // 20 samples
 char* ERROR_THRESHOLD_str;            // 2 epsilon
 char* EMWA_ALPHA_str;                 // 0.25
+char* PATH_TO_ID_FILE;
 
 int FREQUENCY;
 int DURATION;
@@ -144,6 +144,8 @@ int main(int argc, char** argv) {
     ERROR_THRESHOLD_str      = argv[7];               // 2 epsilon
     EMWA_ALPHA_str           = argv[8];               // 0.25
 
+    PATH_TO_ID_FILE          = argv[9];
+
     FREQUENCY           = atoi(FREQUENCY_str);
     DURATION            = atoi(DURATION_str);
     SLIDING_WINDOW_SIZE = atoi(SLIDING_WINDOW_SIZE_str);
@@ -170,7 +172,7 @@ int main(int argc, char** argv) {
     // to double with todays date at 00:00:00.000000 in unix time
     today = (double)t + 3600;  
 
-    fp_id = fopen(ID_FILE, "r");
+    fp_id = fopen(PATH_TO_ID_FILE, "r");
     char* idline = NULL;
     size_t idlen = 0;
     if(getline(&idline, &idlen, fp_id)){
