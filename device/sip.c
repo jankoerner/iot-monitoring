@@ -7,13 +7,13 @@
 #include <netdb.h>
 #include <time.h>
 #include <string.h>
-#include <sys/time.h>
 
 #include "main.h"
 
 #define ROW_BUFFER_SIZE 100
 
-#define ID_FILE "/home/pi/iot-monitoring/data/id.txt"
+//#define ID_FILE "/home/pi/iot-monitoring/data/id.txt"
+#define ID_FILE "id.txt"
 
 char* PATH_TO_DATA;          
 char* address;                        // 127.0.0.1
@@ -31,26 +31,28 @@ int ERROR_THRESHOLD;
 double EMWA_ALPHA;
 
 //Linear values:
-long double m = 0.0;
-long double k = 0.0;
+double m = 0.0;
+double k = 0.0;
 
 // Current k and m on sink
-long double sink_m = 0.0;
-long double sink_k = 0.0;
+double sink_m = 0.0;
+double sink_k = 0.0;
 
-long double* m_ptr = &m;
-long double* k_ptr = &k;
+double* m_ptr = &m;
+double* k_ptr = &k;
 
-long double raw_value; 
-long double emwa_m = 0.0;
-long double current_value = 0.0;
+double raw_value; 
+double emwa_m = 0.0;
+double current_value = 0.0;
 
-long double predicted_sink_value = 0.0;
-long double predicted_client_value = 0.0;
+double predicted_sink_value = 0.0;
+double predicted_client_value = 0.0;
 
-long double local_sink = 0.0;
+double local_sink = 0.0;
 
-long double iteration_time;
+double iteration_time;
+
+double today;
 
 char buffer[2048];
 
@@ -66,10 +68,10 @@ char* data;
 FILE *fp;
 FILE *fp_id;
 
-void sink(long double prediction, int timeStamp) {
+void sink(double prediction, int timeStamp) {
     local_sink = prediction;
-    printf("Sink received predicted data: %.25Lf\n", local_sink);
-    printf("Timestamp: %d\n", timeStamp);
+    //printf("Sink received predicted data: %lf\n", local_sink);
+    //printf("Timestamp: %d\n", timeStamp);
 }
 
 int sendMessage(char* address, char* message){
@@ -94,72 +96,44 @@ int sendMessage(char* address, char* message){
     printf("connection with the server failed...\n");
     exit(0);
   }
-  else
-    printf("Messsage to send: %s\n", message);
+  else{
+    //printf("Messsage to send: %s\n", message);
     send(sockfd, message, strlen(message), 0);
+  }
 
   close(sockfd);
   return 0;
 }
 
-void calculateLinearApproximation(long times[], long double values[], int length) {
-    //printf("intern segfaul1:\n");
-    long double sum_x = 0.0;
-    long double sum_y = 0.0; 
-    long double sum_xy = 0.0;
-    long double sum_x_squared = 0.0;
-    //printf("length: %d\n", length);
-    
-    for(int i = 0; i < length; i++) {
-        if(times[i] < 0) {
-            printf("i: %d\n", i);
-            printf("times[i] %Lf\n", times[i]);
-        }
-        sum_x += times[i];
-        sum_y += values[i];
-        //printf("times[i]: %ld\n", times[i]);
-        sum_xy += times[i] * values[i];
-        sum_x_squared += (long double)times[i] * (long double)times[i];
+void calculateLinearApproximation(double x[], double y[], int n) {
 
-    }
-    
+  double sumx = 0.0;
+  double sumx2 = 0.0;
+  double sumxy = 0.0;
+  double sumy = 0.0;
+  double sumy2  = 0.0;
+  for (int i=0;i<n;i++){
+    sumx  += x[i];
+    sumx2 += (x[i] * x[i]);
+    sumxy += x[i] * y[i];
+    sumy  += y[i];
+    sumy2 += (y[i] * y[i]);
+  }
 
-    //sum_xy is -nan
+  // Can't solve singular matrix
+  double denom = (n * sumx2 - (sumx * sumx));
 
-    //printf("sum_x_squared: %.25Lf\n", sum_x_squared);
-
-    //printf("Yes: %f\n", (length * sum_x_squared - (sum_x*sum_x)));
-    if((length * sum_x_squared - (sum_x*sum_x)) != 0.0) {
-
-        long double eq_a = length*sum_xy;
-        long double eq_b = sum_x*sum_y;
-        long double eq_c = (double)length*sum_x_squared;
-        long double eq_d = sum_x*sum_x;
-
-        long double eq_part1 = eq_a - eq_b;
-        long double eq_part2 = eq_c - eq_d;
-
-        //printf("Length: %d\n", length);
-        //printf("sum_xy: %f\n", sum_xy);
-        //printf("\n");
-        //printf("eq_c: %.25Lf\n", eq_c);
-        //printf("eq_d: %.25Lf\n", eq_d);
-        //printf("eq_part1: %.25Lf\n", eq_part1);
-        //printf("eq_part2: %.25Lf\n", eq_part2);
-        //printf("\n");
-        //printf("eq_part1 / eq_part2: %.25Lf\n", eq_part1 / eq_part2);
-
-        k = eq_part1 / eq_part2;
-
-    } else {
-        k = 0.0;
-    }
-
-    m = (sum_y - (k*sum_x)) / length;
-
+  //printf("s: (%f * %f - %f * %f) / %f\n", sumy/n, sumx2, sumx/n, sumxy, denom);
+  //printf("Today: %lf\n", today);
+  //printf("Average Value: %f\n", sumy/n);
+  //printf("Average timestamp: %f\n", sumx/n);
+  k = (n * sumxy  -  sumx * sumy) / denom;
+  m = (sumy * sumx2  -  sumx * sumxy) / denom;
 }
 
 int main(int argc, char** argv) {
+
+    fflush(stdout);
 
     PATH_TO_DATA         = argv[1];          
     address              = argv[2];               // 127.0.0.1
@@ -175,35 +149,36 @@ int main(int argc, char** argv) {
     SLIDING_WINDOW_SIZE = atoi(SLIDING_WINDOW_SIZE_str);
     ERROR_THRESHOLD     = atoi(ERROR_THRESHOLD_str);
 
-    //printf("Window sliding %d\n", SLIDING_WINDOW_SIZE);
-
     EMWA_ALPHA       =  atof(EMWA_ALPHA_str);
 
     iteration_time = 1.0 / FREQUENCY;
 
     char row[ROW_BUFFER_SIZE];
 
-    //printf("Row before: %s\n", row);
-
     fp = fopen(PATH_TO_DATA, "r");
 
-    int test1 = 0;
-
     int count = 0;
-    // get device_id from file named id.txt
-    
+
+    // get todays date at 00:00:00.000000 in unix 
+    // -----------------------------------------------
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    tm.tm_hour = 0; tm.tm_min = 0; tm.tm_sec = 0;
+    t = mktime(&tm);
+
+
+    // to double with todays date at 00:00:00.000000 in unix time
+    today = (double)t + 3600;  
+
     fp_id = fopen(ID_FILE, "r");
     char* idline = NULL;
     size_t idlen = 0;
     if(getline(&idline, &idlen, fp_id)){
         device_id = atoi(idline);
+        device_id = 0;
     }
     printf("Device id: %d\n", device_id);
     fclose(fp_id);
-
-    int test2 = 0;
-
-  
 
     //THIS IS DUMB. If EMWA_ALPHA is 1, then the alg_id is 8 else 7 
     char *FILTER_ENABLE = "1";
@@ -213,165 +188,89 @@ int main(int argc, char** argv) {
     }
 
     //send(sockfd, data, 100, 0);
-    long double values[SLIDING_WINDOW_SIZE];
-    long timestamps[SLIDING_WINDOW_SIZE];
+    double values[SLIDING_WINDOW_SIZE];
+    double timestamps[SLIDING_WINDOW_SIZE];
 
     // poihter to first element in values
     window_index = 0;
 
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    long startTime = (long)tv.tv_usec;
+    struct timespec* tv = malloc(sizeof(struct timespec));
+
+    clock_gettime(CLOCK_REALTIME, tv);
+    __time_t startTime = tv->tv_sec;
 
 
-    while(feof(fp) != 1 && DURATION*100000 > tv.tv_usec -  startTime) {
+    while(feof(fp) != 1 && DURATION > tv->tv_sec - startTime) {
         if(window_index >= SLIDING_WINDOW_SIZE) {
             window_index = 0;
         }
 
-        //printf("----------------------\n");
-        printf("Enter loop: %d\n", count);
-        //Retrieve next data set: (Query Sensors)
         fgets(row, ROW_BUFFER_SIZE, fp);
 
-        //printf("seg test1\n");
-        //printf("Row: %s", row);
-
-        //First SLIDING_WINDOW_SIZE data points are init, will be sent to sink too
         if(count < SLIDING_WINDOW_SIZE) {
-            printf("Window value inside count thing: %d\n", window_index);
-
             timestamps[window_index] = 0;
 
-            //printf("Timestamp: %f\n", timestamps[count]);
-           // printf("PEEKABOO-----------\n");
-           //printf("I am here\n");
             data = strtok(row, "\n");
             if (data == NULL) {
                 // Handle the case where strtok returns NULL
                 count++;
                 continue; // Skip the rest of this iteration
             }
-            //printf("data:----- %s\n", data);
 
             raw_value = atof(data);
             emwa_m = EMWA_ALPHA * raw_value + (1 - EMWA_ALPHA) * emwa_m;
             //printf("Window index value: %d\n", window_index);
             values[window_index] = emwa_m;
             count++;
-            gettimeofday(&tv, NULL);
-            //printf("Should restart loop?\n");
-            //printf("Duration: %d\n", DURATION);
-            //printf("Comparsion: %ld\n", (tv.tv_usec - startTime));
+            clock_gettime(CLOCK_REALTIME, tv);
             window_index++;
             continue;
         }
         //Ignore measuring in beginning as that would highly skew time as first ones are not sent (Look above)
 
         //Estimate new state (client side)
-        //printf("\nRow: %s", row);
-        //printf("seg test3\n");
-        long current_timestamp = 0;
+        double current_timestamp = 0.0;
         current_value = 0.0;
 
-        // we want the current timestamp, not the one the csv, current_timestamp = atof(row);
-        gettimeofday(&tv, NULL);
-        current_timestamp  = 1000000 * tv.tv_sec + tv.tv_usec;
+        clock_gettime(CLOCK_REALTIME, tv);
 
-        printf("Timestamp: %ld\n", current_timestamp);
+        double usec = tv->tv_nsec/1000;
 
-        //clock_gettime(CLOCK_REALTIME, start);
+        current_timestamp = tv->tv_sec + (usec / 1000000);
 
-        //printf("Second Row: %s\n", row);
         data = strtok(row, "\n");
-        //printf("Third row: %s\n", data);
+        //printf("Data: %s\n", data);
 
         raw_value = atof(data);
         emwa_m = EMWA_ALPHA * raw_value + (1 - EMWA_ALPHA) * emwa_m;
         current_value = emwa_m;
 
-        //printf("\n");
-
-        //printf("Current timestamp %f\n", current_timestamp);
-        //printf("Current value %f\n", current_value);
-        //printf("\n");
-
-        /*
-        if (sscanf(row, "%f,%f", &current_timestamp, &current_value) == 2) {
-            printf("current_timestamp = %.6f\n", current_timestamp);
-            printf("current_value = %.6f\n", current_value);
-        } else {
-            printf("Failed to parse the input string.\n");
-        }
-        */
 
         // write the value in current_timestamp
-        values[window_index] = current_value;
-        timestamps[window_index] = current_timestamp;
-
-        // inc pointer, if pointer is at SLIDING_WINDOW_SIZE, reset to 0
-        //printf("seg test4\n");
-        
-        //printf("seg test5\n");
-
-        
-        //printf("seg test6\n");
+        values[window_index] = current_value ;
+        timestamps[window_index] = current_timestamp - today;
 
         calculateLinearApproximation(timestamps, values, SLIDING_WINDOW_SIZE);
-
-        //printf("seg test7\n");
+        //printf("value: %lf\n", (current_timestamp - today)*k + m);
             
-        long double client_predict_m = *m_ptr;
-        long double client_predict_k = *k_ptr;
-
-
-        //printf("seg test8\n");
+        double client_predict_m = *m_ptr;
+        double client_predict_k = *k_ptr;
 
         // Estimate next state (sink side)
-        predicted_sink_value = sink_k * current_timestamp + sink_m;
-
-        //printf("Predicted sink value %f where k=%.25Lf and m=%.25Lf\n", predicted_sink_value, sink_k, sink_m);
+        predicted_sink_value = sink_k * (current_timestamp - today) + sink_m;
 
         // Estimate next state (sink side)
-        predicted_client_value = client_predict_k * current_timestamp + client_predict_m;
+        predicted_client_value = client_predict_k * (current_timestamp - today) + client_predict_m;
 
-        /*
-        printf("predicted_sink_value: %f\n", predicted_sink_value);
-        printf("predicted_client_value: %f\n", predicted_client_value);
-        printf("Current actual value: %.25Lf\n", current_value);
-        */
-
-
-        //printf("Predicted client value %f where k=%.25Lf and m=%.25Lf\n", predicted_client_value, client_predict_k, client_predict_m);
-
-        //printf("Error value: %.25Lf\n", fabsl(predicted_sink_value - predicted_client_value));
         //If error threshold met
         if(fabsl(predicted_sink_value - predicted_client_value) > ERROR_THRESHOLD || predicted_sink_value == 0.0) {
-            //printf("Error: %f\n", fabsl(predicted_sink_value - predicted_client_value));
-            //printf("Client predict: %f\n", predicted_client_value);
-            //printf("Sink   predict: %f\n", predicted_sink_value);
-            //printf("Count: %d\n", count);
-
-            // printf("Sending new K=%f and M=%f\n", client_predict_k, client_predict_m);
-            // printf("\n");
-
-            /*
-            printf("Enter loop: %d\n", count);
-            printf("Sending message \n");
-            printf("Client predict k : %.25Lf\n", client_predict_k);
-            printf("Client predict m: %.25Lf\n", client_predict_m);
-            */
-            
-
-            sprintf(buffer, "%d,%ld,%.25Lf,%.25Lf,%s", device_id, current_timestamp, client_predict_k, client_predict_m, FILTER_ENABLE);
+            sprintf(buffer, "%d,%lf,%lf,%lf,%s", device_id, current_timestamp, client_predict_k, client_predict_m, FILTER_ENABLE);
 
             message = buffer;
 
-
-            //printf("Device id: %d\n", device_id);
-
             sendMessage(address, message);
-            //printf("I sent: %s\n", message);
+            printf("@%d I sent: %s\n", count, message);
+            //printf("The count was: %d\n", count);
             //printf("-----------------------\n");
             
 
@@ -380,13 +279,11 @@ int main(int argc, char** argv) {
 
         }
 
-        printf("seg test9\n");
-
+        fflush(stdout);
         usleep(iteration_time * 1000000);  // Sleep in microsecond
         count++; 
-        gettimeofday(&tv, NULL);
+        clock_gettime(CLOCK_REALTIME, tv);
 
-        printf("seg test10\n");
         // fuckit
         
         window_index += 1;
@@ -394,6 +291,7 @@ int main(int argc, char** argv) {
     }
     fclose(fp);
   
+    free(tv);
     count = 0;
 
     //Here begins the genral code: 
