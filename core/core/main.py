@@ -133,7 +133,8 @@ def threaded(c):
             # skip on first 10 messages, cuz easier to manage view in Grafana
             if (current_number_of_messages >= 10):
                 current_message_frequency = current_number_of_messages / start_delta
-                message_frequency[key] = current_number_of_messages
+            
+            message_frequency[key] = current_number_of_messages
                 
             timestamp = datetime.datetime.fromtimestamp(unixtime / 1e6).strftime('%Y-%m-%d %H:%M:%S.%f')
             val = f"{float(value_s):.12f}"
