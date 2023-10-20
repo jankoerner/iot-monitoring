@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "main.h"
 
@@ -166,7 +167,7 @@ int main(int argc, char** argv) {
     time_t t = time(NULL);
     struct tm tm = *gmtime(&t);
     tm.tm_hour = 0; tm.tm_min = 0; tm.tm_sec = 0;
-    t = mktime(&tm);
+    t = timegm(&tm);
 
     // to double with todays date at 00:00:00.000000 in unix time
     today = (double)t;
