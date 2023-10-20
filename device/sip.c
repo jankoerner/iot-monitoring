@@ -164,21 +164,20 @@ int main(int argc, char** argv) {
     // get todays date at 00:00:00.000000 in unix 
     // -----------------------------------------------
     time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
+    struct tm tm = *gmtime(&t);
     tm.tm_hour = 0; tm.tm_min = 0; tm.tm_sec = 0;
     t = mktime(&tm);
 
-
     // to double with todays date at 00:00:00.000000 in unix time
-    today = (double)t + 3600;  
-
+    today = (double)t;
+    
     fp_id = fopen(PATH_TO_ID_FILE, "r");
     char* idline = NULL;
     size_t idlen = 0;
     if(getline(&idline, &idlen, fp_id)){
         device_id = atoi(idline);
     }
-    printf("Device id: %d\n", device_id);
+    printf("Device id: %d with timeoffset %lf\n", device_id, today);
     fclose(fp_id);
 
     //THIS IS DUMB. If EMWA_ALPHA is 1, then the alg_id is 8 else 7 
@@ -228,7 +227,7 @@ int main(int argc, char** argv) {
             continue;
         }
         //Ignore measuring in beginning as that would highly skew time as first ones are not sent (Look above)
-
+        
         //Estimate new state (client side)
         double current_timestamp = 0.0;
         current_value = 0.0;
@@ -239,6 +238,7 @@ int main(int argc, char** argv) {
 
         current_timestamp = tv->tv_sec + (usec / 1000000);
 
+
         data = strtok(row, "\n");
         //printf("Data: %s\n", data);
 
@@ -248,7 +248,7 @@ int main(int argc, char** argv) {
 
 
         // write the value in current_timestamp
-        values[window_index] = current_value ;
+        values[window_index] = current_value;
         timestamps[window_index] = current_timestamp - today;
 
         calculateLinearApproximation(timestamps, values, SLIDING_WINDOW_SIZE);

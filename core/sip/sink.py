@@ -7,8 +7,12 @@ import time
 import datetime
 import os
 
+RADIO_SILENCE_TIME = 0 # seconds
+
 NUM_DEVICES = int(os.environ['NUM_DEVICES'])
 FREQUENCY = int(os.environ['SAMPLE_FREQ']) # Hz
+
+STOP_SAMPLE_AFTER_RADIO_SILENCE_TIME = 10 # seconds
 
 HOST = "0.0.0.0"  # Standard loopback interface address (localhost)
 PORT = int(os.environ['SINK_PORT'])  # Port to listen on
@@ -125,7 +129,11 @@ def socket_thread(c):
             k = float(k_s)
             m = float(m_s)
 
-            sink.setFunction(k, m) 
+            sink.setFunction(k, m)
+
+            # set RADIO_SILENCE_TIME to 0
+            global RADIO_SILENCE_TIME
+            RADIO_SILENCE_TIME = 0
     # connection closed
     c.close()
 
@@ -135,26 +143,30 @@ def sample_thread():
     s.connect(("core", CORE_PORT))
 
     while True:
-        for i in range(NUM_DEVICES):
-            sink = sinks[i]
+        global RADIO_SILENCE_TIME
+        global STOP_SAMPLE_AFTER_RADIO_SILENCE_TIME
+        if (STOP_SAMPLE_AFTER_RADIO_SILENCE_TIME > RADIO_SILENCE_TIME):
+            for i in range(NUM_DEVICES):
+                sink = sinks[i]
 
-            mys = time.time_ns() // 1e3
+                mys = time.time_ns() // 1e3
 
-            current_time_seconds = mys // 1e6
+                current_time_seconds = mys // 1e6
 
-            global today
-            t = current_time_seconds - today
+                global today
+                t = current_time_seconds - today
 
-            #time_to_send is current_time_seconds in microsec as int
-            time_to_send = int(mys)
+                #time_to_send is current_time_seconds in microsec as int
+                time_to_send = int(mys)
 
-            prediction = sink.getPrediction(t)
+                prediction = sink.getPrediction(t)
 
-            if prediction != 0: # cheat
-                print(f"Sampled: {prediction:.12f} @ {t} from device {i}")
-                s.sendall(f"{i},{alg_id},{time_to_send},{prediction:.12f}\n".encode('utf-8'))
+                if prediction != 0: # cheat
+                    print(f"Sampled: {prediction:.12f} @ {t} from device {i}")
+                    s.sendall(f"{i},{alg_id},{time_to_send},{prediction:.12f}\n".encode('utf-8'))
 
         time.sleep(frq)
+        RADIO_SILENCE_TIME = RADIO_SILENCE_TIME + frq
 
 sinks = [None] * NUM_DEVICES
 
